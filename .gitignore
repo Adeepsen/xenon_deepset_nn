@@ -1,1 +1,4 @@
 data/s2_tag_training_clusters.npy
+
+# Weights & Biases
+wandb/
