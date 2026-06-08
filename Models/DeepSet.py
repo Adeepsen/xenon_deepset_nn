@@ -82,3 +82,5 @@ train_df.loc[:, FEATURES] = scaler.transform(train_df[FEATURES])
 val_df.loc[:, FEATURES]   = scaler.transform(val_df[FEATURES])
 test_df.loc[:, FEATURES]  = scaler.transform(test_df[FEATURES])
 
+FEATURES = ["x","y","n_electrons_interface","drift_time_mean","drift_time_spread"]
+TARGETS = ["p_main","p_alt"]
