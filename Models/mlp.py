@@ -9,23 +9,32 @@ from torch.utils.data import Dataset, DataLoader
 import wandb
 import matplotlib.pyplot as plt
 
+#checkpoints 
+import os
+from pathlib import Path
+
 # W&B setup
 wandb.init(
     project="xenon-mlp",
     config={
         "top13_ns": 192_600,
         "batch_size": 4096,
-        "epochs": 10,
+        "epochs": 100,
         "learning_rate": 1e-3,
         "hidden_size": 64,
         "loss": "MSELoss",
         "model_type": "per_cluster_mlp",
-        "eval_event_sample_size": 50000,  # smaller sample for faster evaluation
     }
 )
 
+#wandb checkpoints
+checkpoint_dir = Path("checkpoints")
+checkpoint_dir.mkdir(exist_ok=True)
+
+best_val_loss = float("inf")
+
 # data cleaning
-data = np.load("/Users/adeepsen/xenon_deepset_nn/data/s2_tag_training_clusters.npy")
+data = np.load("/home/adeeps/projects/xenon_deepset_nn/data/s2_tag_training_clusters.npy")
 df = pd.DataFrame(data)
 
 top13_ns = 192_600  # ~13 cm using 0.675 mm/us drift velocity
@@ -101,20 +110,29 @@ class ClusterDataset(Dataset):
         return self.X[idx], self.y[idx]
 
 # data loaders
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # pick gpus if possible
+print("Using device:", device)
+pin = device.type == "cuda"
+
 train_loader = DataLoader(
     ClusterDataset(X_train, y_train),
     batch_size=4096,
-    shuffle=True
+    shuffle=True,
+    pin_memory=pin
 )
+
 val_loader = DataLoader(
     ClusterDataset(X_val, y_val),
     batch_size=4096,
-    shuffle=False
+    shuffle=False,
+    pin_memory=pin
 )
+
 test_loader = DataLoader(
     ClusterDataset(X_test, y_test),
     batch_size=4096,
-    shuffle=False
+    shuffle=False,
+    pin_memory=pin
 )
 
 # The actual model:
@@ -133,8 +151,6 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # pick gpus if possible
-print("Using device:", device)
 
 model = MLP().to(device)
 
@@ -156,8 +172,8 @@ def run_epoch(loader, train=True):
 
     with torch.set_grad_enabled(train):
         for Xb, yb in loader:
-            Xb = Xb.to(device)
-            yb = yb.to(device)
+            Xb = Xb.to(device, non_blocking = True)
+            yb = yb.to(device, non_blocking = True)
 
             preds = model(Xb)
             loss = criterion(preds, yb)
@@ -195,6 +211,43 @@ for epoch in range(num_epochs):
 
     print(f"Epoch {epoch+1:02d} | train {train_loss:.4f} | val {val_loss:.4f} | lr {current_lr:.2e}")
 
+        # save latest checkpoint every epoch
+    latest_ckpt = {
+        "epoch": epoch + 1,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict(),
+        "scaler_mean": scaler.mean_,
+        "scaler_scale": scaler.scale_,
+        "train_loss": train_loss,
+        "val_loss": val_loss,
+        "best_val_loss": best_val_loss,
+        "config": dict(wandb.config),
+    }
+    torch.save(latest_ckpt, checkpoint_dir / "latest.pt")
+
+    # save best checkpoint when validation improves
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        best_ckpt = {
+            "epoch": epoch + 1,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
+            "scaler_mean": scaler.mean_,
+            "scaler_scale": scaler.scale_,
+            "train_loss": train_loss,
+            "val_loss": val_loss,
+            "best_val_loss": best_val_loss,
+            "config": dict(wandb.config),
+        }
+        torch.save(best_ckpt, checkpoint_dir / "best.pt")
+        print(f"Saved new best checkpoint at epoch {epoch+1}")
+
+    # optional snapshot every 10 epochs
+    if (epoch + 1) % 10 == 0:
+        torch.save(latest_ckpt, checkpoint_dir / f"epoch_{epoch+1:03d}.pt")
+
 # validation plot
 plt.figure(figsize=(8, 5))
 plt.plot(range(1, num_epochs + 1), train_losses, label="train")
@@ -205,36 +258,21 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-# smaller evaluation sample
-eval_event_sample_size = wandb.config.eval_event_sample_size
+# test metrics on full test set
+test_eval_df = test_df.copy().reset_index(drop=True)
 
-test_event_ids = test_df["event_number"].unique()
-
-if len(test_event_ids) > eval_event_sample_size:
-    sampled_event_ids = np.random.choice(
-        test_event_ids,
-        size=eval_event_sample_size,
-        replace=False
-    )
-else:
-    sampled_event_ids = test_event_ids
-
-test_eval_df = test_df[test_df["event_number"].isin(sampled_event_ids)].copy()
-
-print("Eval events:", len(np.unique(test_eval_df["event_number"])))
+print("Eval events:", test_eval_df["event_number"].nunique())
 print("Eval rows:", len(test_eval_df))
-
-# test metrics on sample
-# make sure the sampled test dataframe and prediction order match
-test_eval_df = test_eval_df.reset_index(drop=True)
 
 X_eval = scaler.transform(test_eval_df[feature_cols].to_numpy())
 y_eval = test_eval_df[target_cols].to_numpy(dtype=np.float32)
 
+
 eval_loader = DataLoader(
     ClusterDataset(X_eval, y_eval),
     batch_size=4096,
-    shuffle=False
+    shuffle=False,
+    pin_memory = pin
 )
 
 model.eval()
@@ -243,7 +281,7 @@ all_true = []
 
 with torch.no_grad():
     for Xb, yb in eval_loader:
-        Xb = Xb.to(device)
+        Xb = Xb.to(device, non_blocking=True)
         probs = model(Xb).cpu().numpy()
         all_probs.append(probs)
         all_true.append(yb.numpy())
