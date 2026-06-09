@@ -2,3 +2,5 @@ data/s2_tag_training_clusters.npy
 
 # Weights & Biases
 wandb/
+
+Models/deepset_processed_data.npz
