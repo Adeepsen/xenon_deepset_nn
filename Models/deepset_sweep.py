@@ -45,8 +45,8 @@ SWEEP_CONFIG: Dict[str, Any] = {
         "scheduler_t_max": {"value": 40},
 
         # Training length and early stopping.
-        "max_epochs": {"value": 400},
-        "early_stopping_patience": {"value": 30},
+        "max_epochs": {"value": 1000},
+        "early_stopping_patience": {"value": 100},
         "early_stopping_metric": {"value": "val_event_main_accuracy"},
 
         # Keep the objective aligned with your comparison metric.
@@ -86,13 +86,13 @@ def run() -> None:
         train(config)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Launch a W&B sweep agent for DeepSet training.")
     parser.add_argument(
         "--sweep_id",
         type=str,
-        default=os.environ.get("WANDB_SWEEP_ID", ""),
-        help="Existing W&B sweep ID. If empty, create the sweep manually and pass the ID here.",
+        default="",
+        help="Existing W&B sweep ID. If omitted, a new sweep will be created.",
     )
     parser.add_argument(
         "--count",
@@ -100,11 +100,21 @@ if __name__ == "__main__":
         default=20,
         help="Number of runs for this agent invocation.",
     )
+    parser.add_argument(
+        "--create_sweep",
+        action="store_true",
+        help="Force creation of a new sweep before launching the agent.",
+    )
     args = parser.parse_args()
 
-    if not args.sweep_id:
-        raise SystemExit(
-            "Missing --sweep_id. Create the sweep first, then run this script as a W&B agent."
-        )
+    if args.create_sweep or not args.sweep_id:
+        sweep_id = wandb.sweep(SWEEP_CONFIG, project="xenon-deepset")
+        print(f"Created sweep: {sweep_id}")
+    else:
+        sweep_id = args.sweep_id
 
-    wandb.agent(args.sweep_id, function=run, count=args.count)
+    wandb.agent(sweep_id, function=run, count=args.count)
+
+
+if __name__ == "__main__":
+    main()
