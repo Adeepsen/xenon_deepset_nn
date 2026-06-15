@@ -45,7 +45,7 @@ SWEEP_CONFIG: Dict[str, Any] = {
         "scheduler_t_max": {"value": 40},
 
         # Training length and early stopping.
-        "max_epochs": {"value": 1000},
+        "max_epochs": {"value": 500},
         "early_stopping_patience": {"value": 100},
         "early_stopping_metric": {"value": "val_event_main_accuracy"},
 
