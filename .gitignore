@@ -4,3 +4,5 @@ data/s2_tag_training_clusters.npy
 wandb/
 
 Models/deepset_processed_data.npz
+
+/home/adeeps/projects/xenon_deepset_nn/Models/pooling_processed_data.npz
