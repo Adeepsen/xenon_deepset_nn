@@ -5,4 +5,4 @@ wandb/
 
 Models/deepset_processed_data.npz
 
-/home/adeeps/projects/xenon_deepset_nn/Models/pooling_processed_data.npz
+Models/deepset_variations/pooling_processed_data.npz
