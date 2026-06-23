@@ -22,11 +22,11 @@ import numpy as npimport pandas as pdimport torchimport torch.nn as nnfrom torch
 
 try:import wandbexcept Exception:wandb = None
 
------------------------------
+#-----------------------------
 
-User-editable parameters
+#User-editable parameters
 
------------------------------
+#-----------------------------
 
 RAW_DATA_PATH = "/home/adeeps/projects/xenon_deepset_nn/data/s2_tag_training_clusters.npy"CACHE_FILE = "pooling_processed_data.npz"CHECKPOINT_PATH = "best_pooling_model.pt"
 
@@ -40,19 +40,19 @@ RANDOM_SEED = 42DEVICE = torch.device("cuda" if torch.cuda.is_available() else "
 
 FEATURES = ["x","y","n_electrons_interface","drift_time_mean","drift_time_spread",]TARGETS = ["p_main", "p_alt"]EVENT_COL = "event_number"TOP13_NS = 192_600
 
------------------------------
+#-----------------------------
 
-Reproducibility
+#Reproducibility
 
------------------------------
+#-----------------------------
 
 def set_seed(seed: int) -> None:np.random.seed(seed)torch.manual_seed(seed)torch.cuda.manual_seed_all(seed)
 
------------------------------
+#-----------------------------
 
-Data prep
+#Data prep
 
------------------------------
+#-----------------------------
 
 def build_event_groups(event_ids_array: np.ndarray) -> List[np.ndarray]:order = np.argsort(event_ids_array, kind="mergesort")sorted_events = event_ids_array[order]boundaries = np.flatnonzero(sorted_events[1:] != sorted_events[:-1]) + 1return list(np.split(order, boundaries))
 
@@ -206,11 +206,11 @@ for i, item in enumerate(batch):
 
 return {"x": x_padded, "y": y_padded, "mask": mask}
 
------------------------------
+#-----------------------------
 
-Model
+#Model
 
------------------------------
+#-----------------------------
 
 class MaskedPoolingNet(nn.Module):"""Per-cluster encoder + masked mean/max pooling + per-cluster head."""
 
@@ -263,11 +263,11 @@ def forward(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     out = self.head(torch.cat([h, context_expanded], dim=-1))  # [B, K, 2]
     return out
 
------------------------------
+#-----------------------------
 
-Loss and metrics
+#Loss and metrics
 
------------------------------
+#-----------------------------
 
 def masked_bce_loss(logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:loss_per_entry = nn.functional.binary_cross_entropy_with_logits(logits, targets, reduction="none")mask_f = mask.unsqueeze(-1).float()loss_per_entry = loss_per_entry * mask_fdenom = mask_f.sum() * logits.shape[-1]return loss_per_entry.sum() / denom.clamp_min(1.0)
 
@@ -350,11 +350,11 @@ if collect_metrics and len(all_targets) > 0:
 
 return avg_loss, metrics
 
------------------------------
+#-----------------------------
 
-Dataloaders
+#Dataloaders
 
------------------------------
+#-----------------------------
 
 def make_dataloaders() -> Tuple[DataLoader, DataLoader, DataLoader]:(X_train,Y_train,E_train,train_groups,X_val,Y_val,E_val,val_groups,X_test,Y_test,E_test,test_groups,) = prepare_data()
 
@@ -396,11 +396,11 @@ test_loader = DataLoader(
 
 return train_loader, val_loader, test_loader
 
------------------------------
+#-----------------------------
 
-Training
+#Training
 
------------------------------
+#-----------------------------
 
 def train() -> Dict[str, float]:set_seed(RANDOM_SEED)train_loader, val_loader, test_loader = make_dataloaders()
 
@@ -551,10 +551,10 @@ if USE_WANDB and wandb is not None and wandb.run is not None:
 
 return results
 
------------------------------
+#-----------------------------
 
-Entry point
+#Entry point
 
------------------------------
+#-----------------------------
 
 if name == "main":train()
