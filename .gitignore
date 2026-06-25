@@ -12,3 +12,4 @@ Models/deepset_variations/val_main_accuracy_by_multiplicity.csv
 Models/deepset_variations/test_main_hit_vs_miss_summary.csv
 Models/deepset_variations/val_main_event_diagnostics.csv
 Models/deepset_variations/val_main_hit_vs_miss_summary.csv
+Models/deepset_variations/deepset_graph.py
