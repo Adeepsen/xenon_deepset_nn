@@ -18,7 +18,12 @@ from future import annotations
 
 import osfrom typing import Any, Dict, List, Optional, Tuple
 
-import numpy as npimport pandas as pdimport torchimport torch.nn as nnfrom torch.utils.data import Dataset, DataLoaderfrom sklearn.metrics import roc_auc_scorefrom sklearn.model_selection import train_test_splitfrom sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
+import torchimport torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_splitfrom sklearn.preprocessing import StandardScaler
 
 try:import wandbexcept Exception:wandb = None
 
@@ -32,11 +37,22 @@ RAW_DATA_PATH = "/home/adeeps/projects/xenon_deepset_nn/data/s2_tag_training_clu
 
 USE_WANDB = TrueWANDB_PROJECT = "xenon-pooling"WANDB_ENTITY = NoneWANDB_RUN_NAME = None
 
-LATENT_DIM = 256PHI_HIDDEN = 512HEAD_HIDDEN = 512LEARNING_RATE = 1e-3WEIGHT_DECAY = 0.0BATCH_SIZE = 512MAX_EPOCHS = 500EARLY_STOPPING_PATIENCE = 100NUM_WORKERS = 4PIN_MEMORY = TrueSHUFFLE_TRAIN = True
+LATENT_DIM = 256 
+PHI_HIDDEN = 512 
+HEAD_HIDDEN = 512 
+LEARNING_RATE = 1e-3 
+WEIGHT_DECAY = 0.0 
+BATCH_SIZE = 512 
+MAX_EPOCHS = 500
+EARLY_STOPPING_PATIENCE = 100 
+NUM_WORKERS = 4
+PIN_MEMORY = True
+SHUFFLE_TRAIN = True
 
 SCHEDULER = "reduce_on_plateau"  # "reduce_on_plateau", "cosine", or "none"SCHEDULER_PATIENCE = 8SCHEDULER_FACTOR = 0.5SCHEDULER_MIN_LR = 1e-6SCHEDULER_T_MAX = 40
 
-RANDOM_SEED = 42DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+RANDOM_SEED = 42
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 FEATURES = ["x","y","n_electrons_interface","drift_time_mean","drift_time_spread",]TARGETS = ["p_main", "p_alt"]EVENT_COL = "event_number"TOP13_NS = 192_600
 
@@ -54,7 +70,8 @@ def set_seed(seed: int) -> None:np.random.seed(seed)torch.manual_seed(seed)torch
 
 #-----------------------------
 
-def build_event_groups(event_ids_array: np.ndarray) -> List[np.ndarray]:order = np.argsort(event_ids_array, kind="mergesort")sorted_events = event_ids_array[order]boundaries = np.flatnonzero(sorted_events[1:] != sorted_events[:-1]) + 1return list(np.split(order, boundaries))
+def build_event_groups(event_ids_array: np.ndarray) -> List[np.ndarray]:order = np.argsort(event_ids_array, kind="mergesort")sorted_events = event_ids_array[order]boundaries = np.flatnonzero(sorted_events[1:] != sorted_events[:-1]) + 1
+    return list(np.split(order, boundaries))
 
 def prepare_data() -> Tuple[np.ndarray, ...]:"""Load cached processed arrays, or build them once and cache them."""if os.path.exists(CACHE_FILE):cached = np.load(CACHE_FILE, allow_pickle=True)
 
