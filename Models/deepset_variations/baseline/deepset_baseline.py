@@ -46,17 +46,21 @@ except Exception:
 
 RAW_DATA_PATH = "/home/adeeps/projects/xenon_deepset_nn/data/s2_tag_training_clusters.npy"
 CACHE_FILE = "graph_pooling_processed_data.npz"
-CHECKPOINT_PATH = "best_graph_pooling_model_long_baseline_best.pt"
+CHECKPOINT_PATH = "best_graph_pooling_long_baseline_best.pt"
 CHECKPOINT_DIR = "long_baseline_checkpoints"
 LATEST_CHECKPOINT_PATH = os.path.join(CHECKPOINT_DIR, "latest.pt")
-CHECKPOINT_EVERY_EPOCHS = 100
+CHECKPOINT_EVERY_EPOCHS = 50
 SAVE_PERIODIC_CHECKPOINTS = True
 
 # Tie-aware event-level metric settings.
 # Strict accuracy is still logged for backwards compatibility, but the
 # tie-aware metric is the default validation/checkpoint metric.
 METRIC_TOL = 1e-6
-CHECKPOINT_METRIC = "event_main_accuracy_tie_aware"
+CHECKPOINT_METRIC = "combined_p_main_score"
+CHECKPOINT_MODE = "max"  # "max" or "min"
+COMBINED_SCORE_TIE_AWARE_WEIGHT = 1.0
+COMBINED_SCORE_EVENT_MAE_WEIGHT = 0.5
+COMBINED_SCORE_SUM_ERROR_WEIGHT = 0.25
 
 # Optional per-event diagnostic CSVs for validation/test. These are useful
 # for making multiplicity, margin, and electron-rank plots after training.
@@ -66,7 +70,7 @@ DIAGNOSTICS_DIR = "event_diagnostics"
 USE_WANDB = True
 WANDB_PROJECT = "xenon-graph-pooling-long-baseline"
 WANDB_ENTITY = None
-WANDB_RUN_NAME = "long-baseline"
+WANDB_RUN_NAME = None
 
 LATENT_DIM = 64
 PHI_HIDDEN = 128
@@ -76,7 +80,7 @@ HEAD_DEPTH = 3
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 0.0
 BATCH_SIZE = 512
-MAX_EPOCHS = 1000
+MAX_EPOCHS = 2000
 EARLY_STOPPING_PATIENCE = 250
 NUM_WORKERS = 4
 PIN_MEMORY = True
@@ -406,12 +410,11 @@ def compute_event_main_metrics_from_batch(
     tol: float = METRIC_TOL,
     collect_rows: bool = False,
 ) -> Tuple[Dict[str, float], List[Dict[str, Any]]]:
-    """Compute strict and tie-aware event-level p_main metrics for one PyG batch.
+    """Compute event-level ranking and calibration metrics for one PyG batch.
 
-    This treats p_main as a soft/fractional target. The model prediction is the
-    cluster with largest predicted p_main. Strict correctness requires matching
-    torch.argmax(true p_main). Tie-aware correctness requires that the selected
-    cluster's true p_main is within tol of the event's maximum true p_main.
+    Ranking metrics answer: did the model put a true max-p_main cluster near the
+    top of the event? Calibration metrics answer: are all predicted p_main values
+    close to their soft targets for a typical event?
     """
 
     probs_cpu = probs.detach().cpu()
@@ -423,6 +426,8 @@ def compute_event_main_metrics_from_batch(
 
     strict_correct = 0
     tie_aware_correct = 0
+    top2_tie_aware_correct = 0
+    top3_tie_aware_correct = 0
     true_tie_count = 0
     strict_miss_tie_correct = 0
     event_total = 0
@@ -430,7 +435,20 @@ def compute_event_main_metrics_from_batch(
     true_margins: List[float] = []
     pred_margins: List[float] = []
     true_gaps_at_pred: List[float] = []
+
+    # Event-averaged calibration/distribution metrics for p_main. These give
+    # every event equal weight, unlike cluster-averaged MAE/MSE.
+    event_p_main_maes: List[float] = []
+    event_p_main_mses: List[float] = []
+    event_p_main_rmses: List[float] = []
+    event_p_main_kls: List[float] = []
+    event_p_main_sum_errors: List[float] = []
+    event_pred_p_main_sums: List[float] = []
+    event_true_p_main_sums: List[float] = []
+
     rows: List[Dict[str, Any]] = []
+
+    eps = 1e-8
 
     for graph_id in range(n_graphs):
         node_idx = torch.nonzero(batch_cpu == graph_id, as_tuple=False).flatten()
@@ -451,6 +469,14 @@ def compute_event_main_metrics_from_batch(
         strict = pred_main_idx == true_main_idx
         tie_aware = true_main_value_at_pred >= max_true_main - tol
 
+        true_best_mask = true_main >= (true_main.max() - tol)
+        k2 = min(2, n_clusters)
+        k3 = min(3, n_clusters)
+        pred_top2_idx = torch.topk(pred_main, k=k2).indices
+        pred_top3_idx = torch.topk(pred_main, k=k3).indices
+        top2_tie_aware = bool(true_best_mask[pred_top2_idx].any().item())
+        top3_tie_aware = bool(true_best_mask[pred_top3_idx].any().item())
+
         if n_clusters >= 2:
             true_top2 = torch.topk(true_main, k=2).values
             pred_top2 = torch.topk(pred_main, k=2).values
@@ -462,9 +488,29 @@ def compute_event_main_metrics_from_batch(
 
         true_has_tie = bool(n_clusters >= 2 and true_main_margin <= tol)
 
+        err = pred_main - true_main
+        event_mae = float(torch.mean(torch.abs(err)).item())
+        event_mse = float(torch.mean(err * err).item())
+        event_rmse = float(np.sqrt(event_mse))
+
+        pred_sum = float(pred_main.sum().item())
+        true_sum = float(true_main.sum().item())
+        event_sum_error = pred_sum - true_sum
+
+        # Distribution KL is useful if p_main is meant to be an event-level
+        # distribution. It normalizes both vectors within the event, so it is
+        # still computable for sigmoid outputs whose sums are not exactly one.
+        if true_sum > eps and pred_sum > eps:
+            true_dist = true_main / true_main.sum().clamp_min(eps)
+            pred_dist = pred_main / pred_main.sum().clamp_min(eps)
+            event_kl = float((true_dist * torch.log((true_dist + eps) / (pred_dist + eps))).sum().item())
+        else:
+            event_kl = float("nan")
 
         strict_correct += int(strict)
         tie_aware_correct += int(tie_aware)
+        top2_tie_aware_correct += int(top2_tie_aware)
+        top3_tie_aware_correct += int(top3_tie_aware)
         true_tie_count += int(true_has_tie)
         strict_miss_tie_correct += int((not strict) and tie_aware)
         event_total += 1
@@ -472,6 +518,13 @@ def compute_event_main_metrics_from_batch(
         true_margins.append(true_main_margin)
         pred_margins.append(pred_main_margin)
         true_gaps_at_pred.append(true_gap_at_pred)
+        event_p_main_maes.append(event_mae)
+        event_p_main_mses.append(event_mse)
+        event_p_main_rmses.append(event_rmse)
+        event_p_main_kls.append(event_kl)
+        event_p_main_sum_errors.append(event_sum_error)
+        event_pred_p_main_sums.append(pred_sum)
+        event_true_p_main_sums.append(true_sum)
 
         if collect_rows:
             event_number = None
@@ -484,6 +537,8 @@ def compute_event_main_metrics_from_batch(
                     "n_clusters": n_clusters,
                     "main_correct_strict": bool(strict),
                     "main_correct_tie_aware": bool(tie_aware),
+                    "top2_main_tie_aware": bool(top2_tie_aware),
+                    "top3_main_tie_aware": bool(top3_tie_aware),
                     "strict_miss_but_tie_correct": bool((not strict) and tie_aware),
                     "true_main_value_at_pred": true_main_value_at_pred,
                     "max_true_main": max_true_main,
@@ -493,6 +548,13 @@ def compute_event_main_metrics_from_batch(
                     "true_main_has_tie": true_has_tie,
                     "pred_main_idx": pred_main_idx,
                     "strict_true_main_idx": true_main_idx,
+                    "event_p_main_mae": event_mae,
+                    "event_p_main_mse": event_mse,
+                    "event_p_main_rmse": event_rmse,
+                    "event_p_main_kl": event_kl,
+                    "event_true_p_main_sum": true_sum,
+                    "event_pred_p_main_sum": pred_sum,
+                    "event_p_main_sum_error": event_sum_error,
                 }
             )
 
@@ -500,6 +562,8 @@ def compute_event_main_metrics_from_batch(
         "event_total": float(event_total),
         "event_main_accuracy_strict": float(strict_correct / max(event_total, 1)),
         "event_main_accuracy_tie_aware": float(tie_aware_correct / max(event_total, 1)),
+        "event_main_top2_accuracy_tie_aware": float(top2_tie_aware_correct / max(event_total, 1)),
+        "event_main_top3_accuracy_tie_aware": float(top3_tie_aware_correct / max(event_total, 1)),
         "event_main_tie_fraction": float(true_tie_count / max(event_total, 1)),
         "event_main_strict_miss_tie_correct_fraction": float(
             strict_miss_tie_correct / max(event_total, 1)
@@ -510,6 +574,14 @@ def compute_event_main_metrics_from_batch(
         "event_main_median_true_gap_at_pred": _safe_nanmedian(true_gaps_at_pred),
         "event_main_median_true_margin": _safe_nanmedian(true_margins),
         "event_main_median_pred_margin": _safe_nanmedian(pred_margins),
+        "event_p_main_mae": float(np.mean(event_p_main_maes)) if event_p_main_maes else float("nan"),
+        "event_p_main_mse": float(np.mean(event_p_main_mses)) if event_p_main_mses else float("nan"),
+        "event_p_main_rmse": float(np.mean(event_p_main_rmses)) if event_p_main_rmses else float("nan"),
+        "event_p_main_kl": float(np.nanmean(event_p_main_kls)) if event_p_main_kls else float("nan"),
+        "event_p_main_sum_error_mean": float(np.mean(event_p_main_sum_errors)) if event_p_main_sum_errors else float("nan"),
+        "event_p_main_sum_error_mae": float(np.mean(np.abs(event_p_main_sum_errors))) if event_p_main_sum_errors else float("nan"),
+        "event_true_p_main_sum_mean": float(np.mean(event_true_p_main_sums)) if event_true_p_main_sums else float("nan"),
+        "event_pred_p_main_sum_mean": float(np.mean(event_pred_p_main_sums)) if event_pred_p_main_sums else float("nan"),
     }
 
     return metrics, rows
@@ -575,15 +647,13 @@ def run_epoch(
     all_probs: List[torch.Tensor] = []
     diagnostic_rows: List[Dict[str, Any]] = []
 
+    event_metric_weighted_sums: Dict[str, float] = {}
+    event_metric_median_inputs: Dict[str, List[float]] = {
+        "event_main_median_true_gap_at_pred": [],
+        "event_main_median_true_margin": [],
+        "event_main_median_pred_margin": [],
+    }
     event_total = 0
-    strict_correct_total = 0.0
-    tie_aware_correct_total = 0.0
-    tie_count_total = 0.0
-    strict_miss_tie_correct_total = 0.0
-    weighted_true_gap_sum = 0.0
-    true_gap_medians: List[float] = []
-    true_margin_medians: List[float] = []
-    pred_margin_medians: List[float] = []
 
     grad_ctx = torch.enable_grad() if is_train else torch.no_grad()
     with grad_ctx:
@@ -630,32 +700,16 @@ def run_epoch(
 
                 batch_event_total = int(batch_event_metrics["event_total"])
                 event_total += batch_event_total
-                strict_correct_total += (
-                    batch_event_metrics["event_main_accuracy_strict"] * batch_event_total
-                )
-                tie_aware_correct_total += (
-                    batch_event_metrics["event_main_accuracy_tie_aware"] * batch_event_total
-                )
-                tie_count_total += (
-                    batch_event_metrics["event_main_tie_fraction"] * batch_event_total
-                )
-                strict_miss_tie_correct_total += (
-                    batch_event_metrics["event_main_strict_miss_tie_correct_fraction"]
-                    * batch_event_total
-                )
-                weighted_true_gap_sum += (
-                    batch_event_metrics["event_main_mean_true_gap_at_pred"]
-                    * batch_event_total
-                )
-                true_gap_medians.append(
-                    batch_event_metrics["event_main_median_true_gap_at_pred"]
-                )
-                true_margin_medians.append(
-                    batch_event_metrics["event_main_median_true_margin"]
-                )
-                pred_margin_medians.append(
-                    batch_event_metrics["event_main_median_pred_margin"]
-                )
+
+                for key, value in batch_event_metrics.items():
+                    if key == "event_total":
+                        continue
+                    if key in event_metric_median_inputs:
+                        event_metric_median_inputs[key].append(float(value))
+                    else:
+                        event_metric_weighted_sums[key] = event_metric_weighted_sums.get(key, 0.0) + (
+                            float(value) * batch_event_total
+                        )
 
     avg_loss = total_loss / max(n_batches, 1)
     metrics: Dict[str, float] = {}
@@ -665,25 +719,15 @@ def run_epoch(
         all_probs_np = torch.cat(all_probs, dim=0).numpy()
         metrics.update(compute_soft_metrics(all_targets_np, all_probs_np))
 
-        metrics["event_main_accuracy_strict"] = float(strict_correct_total / max(event_total, 1))
-        metrics["event_main_accuracy_tie_aware"] = float(
-            tie_aware_correct_total / max(event_total, 1)
-        )
+        for key, weighted_sum in event_metric_weighted_sums.items():
+            metrics[key] = float(weighted_sum / max(event_total, 1))
+
+        for key, values in event_metric_median_inputs.items():
+            metrics[key] = _safe_nanmedian(values)
 
         # Backwards-compatible alias for older code/plots. This remains the
         # strict argmax metric, so old runs compare apples-to-apples.
         metrics["event_main_accuracy"] = metrics["event_main_accuracy_strict"]
-
-        metrics["event_main_tie_fraction"] = float(tie_count_total / max(event_total, 1))
-        metrics["event_main_strict_miss_tie_correct_fraction"] = float(
-            strict_miss_tie_correct_total / max(event_total, 1)
-        )
-        metrics["event_main_mean_true_gap_at_pred"] = float(
-            weighted_true_gap_sum / max(event_total, 1)
-        )
-        metrics["event_main_median_true_gap_at_pred"] = _safe_nanmedian(true_gap_medians)
-        metrics["event_main_median_true_margin"] = _safe_nanmedian(true_margin_medians)
-        metrics["event_main_median_pred_margin"] = _safe_nanmedian(pred_margin_medians)
         metrics["event_total"] = float(event_total)
 
         if diagnostic_csv_path is not None:
@@ -750,6 +794,31 @@ def make_dataloaders() -> Tuple[PyGDataLoader, PyGDataLoader, PyGDataLoader]:
 # Checkpoint helpers
 # -----------------------------
 
+def add_checkpoint_metrics(metrics: Dict[str, float]) -> None:
+    """Add scalar objective(s) used only for model selection/checkpointing."""
+    metrics["combined_p_main_score"] = float(
+        COMBINED_SCORE_TIE_AWARE_WEIGHT * metrics["event_main_accuracy_tie_aware"]
+        - COMBINED_SCORE_EVENT_MAE_WEIGHT * metrics["event_p_main_mae"]
+        - COMBINED_SCORE_SUM_ERROR_WEIGHT * metrics["event_p_main_sum_error_mae"]
+    )
+
+
+def initial_best_metric(mode: str) -> float:
+    if mode == "max":
+        return float("-inf")
+    if mode == "min":
+        return float("inf")
+    raise ValueError(f"Unknown CHECKPOINT_MODE: {mode}")
+
+
+def is_better_metric(current: float, best: float, mode: str) -> bool:
+    if mode == "max":
+        return current > best
+    if mode == "min":
+        return current < best
+    raise ValueError(f"Unknown CHECKPOINT_MODE: {mode}")
+
+
 def save_training_checkpoint(
     path: str,
     epoch: int,
@@ -776,6 +845,7 @@ def save_training_checkpoint(
         "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None,
         "best_val_metric": float(best_metric),
         "checkpoint_metric": CHECKPOINT_METRIC,
+        "checkpoint_mode": CHECKPOINT_MODE,
         "metric_tol": METRIC_TOL,
         "bad_epochs": int(bad_epochs),
         "train_loss": float(train_loss),
@@ -798,7 +868,12 @@ def save_training_checkpoint(
             "scheduler_factor": SCHEDULER_FACTOR,
             "scheduler_min_lr": SCHEDULER_MIN_LR,
             "scheduler_t_max": SCHEDULER_T_MAX,
+            "checkpoint_metric": CHECKPOINT_METRIC,
+            "checkpoint_mode": CHECKPOINT_MODE,
             "checkpoint_every_epochs": CHECKPOINT_EVERY_EPOCHS,
+            "combined_score_tie_aware_weight": COMBINED_SCORE_TIE_AWARE_WEIGHT,
+            "combined_score_event_mae_weight": COMBINED_SCORE_EVENT_MAE_WEIGHT,
+            "combined_score_sum_error_weight": COMBINED_SCORE_SUM_ERROR_WEIGHT,
             "random_seed": RANDOM_SEED,
         },
     }
@@ -833,7 +908,7 @@ def train() -> Dict[str, float]:
     if scheduler_name == "reduce_on_plateau":
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
-            mode="max",
+            mode=CHECKPOINT_MODE,
             factor=SCHEDULER_FACTOR,
             patience=SCHEDULER_PATIENCE,
             min_lr=SCHEDULER_MIN_LR,
@@ -845,7 +920,7 @@ def train() -> Dict[str, float]:
             eta_min=SCHEDULER_MIN_LR,
         )
 
-    best_metric = float("-inf")
+    best_metric = initial_best_metric(CHECKPOINT_MODE)
     best_state: Optional[Dict[str, Any]] = None
     bad_epochs = 0
 
@@ -872,15 +947,20 @@ def train() -> Dict[str, float]:
                 "scheduler_t_max": SCHEDULER_T_MAX,
                 "metric_tol": METRIC_TOL,
                 "checkpoint_metric": CHECKPOINT_METRIC,
+                "checkpoint_mode": CHECKPOINT_MODE,
                 "checkpoint_dir": CHECKPOINT_DIR,
                 "checkpoint_every_epochs": CHECKPOINT_EVERY_EPOCHS,
                 "save_periodic_checkpoints": SAVE_PERIODIC_CHECKPOINTS,
+                "combined_score_tie_aware_weight": COMBINED_SCORE_TIE_AWARE_WEIGHT,
+                "combined_score_event_mae_weight": COMBINED_SCORE_EVENT_MAE_WEIGHT,
+                "combined_score_sum_error_weight": COMBINED_SCORE_SUM_ERROR_WEIGHT,
             },
         )
 
     for epoch in range(MAX_EPOCHS):
         train_loss, _ = run_epoch(model, train_loader, optimizer=optimizer, collect_metrics=False)
         val_loss, val_metrics = run_epoch(model, val_loader, optimizer=None, collect_metrics=True)
+        add_checkpoint_metrics(val_metrics)
         val_metric = float(val_metrics[CHECKPOINT_METRIC])
         val_acc_strict = float(val_metrics["event_main_accuracy_strict"])
         val_acc_tie_aware = float(val_metrics["event_main_accuracy_tie_aware"])
@@ -891,7 +971,7 @@ def train() -> Dict[str, float]:
             else:
                 scheduler.step()
 
-        if val_metric > best_metric:
+        if is_better_metric(val_metric, best_metric, CHECKPOINT_MODE):
             best_metric = val_metric
             bad_epochs = 0
             best_state = {
@@ -901,6 +981,7 @@ def train() -> Dict[str, float]:
                 "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None,
                 "best_val_metric": best_metric,
                 "checkpoint_metric": CHECKPOINT_METRIC,
+                "checkpoint_mode": CHECKPOINT_MODE,
                 "metric_tol": METRIC_TOL,
                 "val_metrics": dict(val_metrics),
             }
@@ -938,11 +1019,22 @@ def train() -> Dict[str, float]:
                     "val_mean_auc": val_metrics["mean_auc"],
                     "val_event_main_accuracy_strict": val_acc_strict,
                     "val_event_main_accuracy_tie_aware": val_acc_tie_aware,
+                    "val_event_main_top2_accuracy_tie_aware": val_metrics["event_main_top2_accuracy_tie_aware"],
+                    "val_event_main_top3_accuracy_tie_aware": val_metrics["event_main_top3_accuracy_tie_aware"],
                     "val_event_main_tie_fraction": val_metrics["event_main_tie_fraction"],
                     "val_event_main_strict_miss_tie_correct_fraction": val_metrics["event_main_strict_miss_tie_correct_fraction"],
                     "val_event_main_mean_true_gap_at_pred": val_metrics["event_main_mean_true_gap_at_pred"],
+                    "val_event_main_median_true_gap_at_pred": val_metrics["event_main_median_true_gap_at_pred"],
                     "val_event_main_median_true_margin": val_metrics["event_main_median_true_margin"],
                     "val_event_main_median_pred_margin": val_metrics["event_main_median_pred_margin"],
+                    "val_event_p_main_mae": val_metrics["event_p_main_mae"],
+                    "val_event_p_main_mse": val_metrics["event_p_main_mse"],
+                    "val_event_p_main_rmse": val_metrics["event_p_main_rmse"],
+                    "val_event_p_main_kl": val_metrics["event_p_main_kl"],
+                    "val_event_p_main_sum_error_mae": val_metrics["event_p_main_sum_error_mae"],
+                    "val_event_true_p_main_sum_mean": val_metrics["event_true_p_main_sum_mean"],
+                    "val_event_pred_p_main_sum_mean": val_metrics["event_pred_p_main_sum_mean"],
+                    "val_combined_p_main_score": val_metrics["combined_p_main_score"],
                     "learning_rate": optimizer.param_groups[0]["lr"],
                 }
             )
@@ -953,6 +1045,7 @@ def train() -> Dict[str, float]:
             f"val_strict={val_acc_strict:.4f} | "
             f"val_tie_aware={val_acc_tie_aware:.4f} | "
             f"tie_frac={val_metrics['event_main_tie_fraction']:.4f} | "
+            f"val_{CHECKPOINT_METRIC}={val_metric:.4f} | "
             f"best_{CHECKPOINT_METRIC}={best_metric:.4f} | "
             f"bad_epochs={bad_epochs} | "
             f"lr={optimizer.param_groups[0]['lr']:.3e}"
@@ -1019,6 +1112,7 @@ def train() -> Dict[str, float]:
         collect_metrics=True,
         diagnostic_csv_path=test_diag_path,
     )
+    add_checkpoint_metrics(test_metrics)
 
     results = {
         "test_loss": float(test_loss),
@@ -1034,14 +1128,26 @@ def train() -> Dict[str, float]:
         "test_mean_auc": float(test_metrics["mean_auc"]),
         "test_event_main_accuracy_strict": float(test_metrics["event_main_accuracy_strict"]),
         "test_event_main_accuracy_tie_aware": float(test_metrics["event_main_accuracy_tie_aware"]),
+        "test_event_main_top2_accuracy_tie_aware": float(test_metrics["event_main_top2_accuracy_tie_aware"]),
+        "test_event_main_top3_accuracy_tie_aware": float(test_metrics["event_main_top3_accuracy_tie_aware"]),
         "test_event_main_tie_fraction": float(test_metrics["event_main_tie_fraction"]),
         "test_event_main_strict_miss_tie_correct_fraction": float(test_metrics["event_main_strict_miss_tie_correct_fraction"]),
         "test_event_main_mean_true_gap_at_pred": float(test_metrics["event_main_mean_true_gap_at_pred"]),
         "test_event_main_median_true_gap_at_pred": float(test_metrics["event_main_median_true_gap_at_pred"]),
         "test_event_main_median_true_margin": float(test_metrics["event_main_median_true_margin"]),
         "test_event_main_median_pred_margin": float(test_metrics["event_main_median_pred_margin"]),
+        "test_event_p_main_mae": float(test_metrics["event_p_main_mae"]),
+        "test_event_p_main_mse": float(test_metrics["event_p_main_mse"]),
+        "test_event_p_main_rmse": float(test_metrics["event_p_main_rmse"]),
+        "test_event_p_main_kl": float(test_metrics["event_p_main_kl"]),
+        "test_event_p_main_sum_error_mean": float(test_metrics["event_p_main_sum_error_mean"]),
+        "test_event_p_main_sum_error_mae": float(test_metrics["event_p_main_sum_error_mae"]),
+        "test_event_true_p_main_sum_mean": float(test_metrics["event_true_p_main_sum_mean"]),
+        "test_event_pred_p_main_sum_mean": float(test_metrics["event_pred_p_main_sum_mean"]),
+        "test_combined_p_main_score": float(test_metrics["combined_p_main_score"]),
         "best_val_metric": float(best_metric),
         "best_val_metric_name": CHECKPOINT_METRIC,
+        "best_val_metric_mode": CHECKPOINT_MODE,
         "best_epoch": int(best_state["epoch"] if best_state is not None else -1),
     }
 
