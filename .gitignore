@@ -16,3 +16,4 @@ Models/deepset_variations/deepset_graph.py
 Models/deepset_variations/pooling_processed_data_v2.npz
 Models/deepset_variations/graph_pooling_processed_data.npz
 Models/deepset_variations/baseline/graph_pooling_processed_data.npz
+Models/deepset_variations/optuna_sweep/graph_pooling_processed_data.npz

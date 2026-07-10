@@ -79,7 +79,7 @@ WANDB_PROJECT = "xenon-graph-pooling-optuna"
 WANDB_ENTITY = None
 WANDB_RUN_GROUP = "deepset-optuna-bce"
 # Default to offline for reliability. Override with WANDB_MODE=online if desired.
-WANDB_MODE = os.environ.get("WANDB_MODE", "offline")
+WANDB_MODE = os.environ.get("WANDB_MODE", "online")
 
 LATENT_DIM = 64
 PHI_HIDDEN = 128
