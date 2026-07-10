@@ -21,6 +21,11 @@ from __future__ import annotations
 
 import os
 import json
+import gc
+
+# Keep W&B from blocking unattended sweeps forever.
+os.environ.setdefault("WANDB_INIT_TIMEOUT", "60")
+os.environ.setdefault("WANDB__SERVICE_WAIT", "60")
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -73,6 +78,8 @@ USE_WANDB = True
 WANDB_PROJECT = "xenon-graph-pooling-optuna"
 WANDB_ENTITY = None
 WANDB_RUN_GROUP = "deepset-optuna-bce"
+# Default to offline for reliability. Override with WANDB_MODE=online if desired.
+WANDB_MODE = os.environ.get("WANDB_MODE", "offline")
 
 LATENT_DIM = 64
 PHI_HIDDEN = 128
@@ -95,8 +102,10 @@ OPTUNA_N_JOBS = 1
 PRUNER_WARMUP_EPOCHS = 30
 PRUNER_INTERVAL_EPOCHS = 5
 EVALUATE_TEST_FOR_BEST_TRIAL = True
-NUM_WORKERS = 4
-PIN_MEMORY = True
+# Use single-process loading for Optuna reliability. Multi-worker DataLoaders can
+# hang when repeatedly created/destroyed across trials. Increase after debugging.
+NUM_WORKERS = 0
+PIN_MEMORY = False
 SHUFFLE_TRAIN = True
 
 SCHEDULER = "reduce_on_plateau"  # "reduce_on_plateau", "cosine", or "none"
@@ -1082,11 +1091,24 @@ def save_optuna_checkpoint(
 
 
 def objective(trial: optuna.Trial) -> float:
+    print(f"[trial {trial.number:04d}] start", flush=True)
+    train_loader = None
+    val_loader = None
+    model = None
+    optimizer = None
+    scheduler = None
+
     set_seed(RANDOM_SEED + trial.number)
     params = suggest_trial_params(trial)
+    print(f"[trial {trial.number:04d}] params: {json.dumps(params, sort_keys=True)}", flush=True)
 
+    print(f"[trial {trial.number:04d}] creating dataloaders", flush=True)
     train_loader, val_loader, _ = make_dataloaders(batch_size=int(params["batch_size"]))
+    print(f"[trial {trial.number:04d}] dataloaders ready", flush=True)
+
+    print(f"[trial {trial.number:04d}] building model", flush=True)
     model = build_model_from_params(params)
+    print(f"[trial {trial.number:04d}] model ready", flush=True)
 
     optimizer = torch.optim.Adam(
         model.parameters(),
@@ -1110,6 +1132,7 @@ def objective(trial: optuna.Trial) -> float:
 
     run = None
     if USE_WANDB and wandb is not None:
+        print(f"[trial {trial.number:04d}] initializing wandb mode={WANDB_MODE}", flush=True)
         run = wandb.init(
             project=WANDB_PROJECT,
             entity=WANDB_ENTITY,
@@ -1125,12 +1148,18 @@ def objective(trial: optuna.Trial) -> float:
                 "combined_score_tie_aware_weight": COMBINED_SCORE_TIE_AWARE_WEIGHT,
                 "combined_score_event_mae_weight": COMBINED_SCORE_EVENT_MAE_WEIGHT,
                 "combined_score_sum_error_weight": COMBINED_SCORE_SUM_ERROR_WEIGHT,
+                "wandb_mode": WANDB_MODE,
+                "num_workers": NUM_WORKERS,
+                "pin_memory": PIN_MEMORY,
             },
             reinit=True,
+            mode=WANDB_MODE,
         )
+        print(f"[trial {trial.number:04d}] wandb initialized", flush=True)
 
     try:
         for epoch in range(TRIAL_MAX_EPOCHS):
+            print(f"[trial {trial.number:04d}] epoch {epoch + 1:03d} train start", flush=True)
             train_loss, _ = run_epoch(
                 model,
                 train_loader,
@@ -1139,6 +1168,7 @@ def objective(trial: optuna.Trial) -> float:
                 sum_penalty_weight=float(params["event_sum_penalty_weight"]),
                 p_alt_loss_weight=float(params["p_alt_loss_weight"]),
             )
+            print(f"[trial {trial.number:04d}] epoch {epoch + 1:03d} val start", flush=True)
             val_loss, val_metrics = run_epoch(
                 model,
                 val_loader,
@@ -1208,7 +1238,8 @@ def objective(trial: optuna.Trial) -> float:
                 f"tie={val_metrics['event_main_accuracy_tie_aware']:.4f} | "
                 f"event_mae={val_metrics['event_p_main_mae']:.4f} | "
                 f"sum_mae={val_metrics['event_p_main_sum_error_mae']:.4f} | "
-                f"bad={bad_epochs} | lr={optimizer.param_groups[0]['lr']:.3e}"
+                f"bad={bad_epochs} | lr={optimizer.param_groups[0]['lr']:.3e}",
+                flush=True,
             )
 
             if (epoch + 1) >= PRUNER_WARMUP_EPOCHS and (epoch + 1) % PRUNER_INTERVAL_EPOCHS == 0:
@@ -1227,6 +1258,11 @@ def objective(trial: optuna.Trial) -> float:
     finally:
         if USE_WANDB and wandb is not None and wandb.run is not None:
             wandb.finish()
+        print(f"[trial {trial.number:04d}] cleanup", flush=True)
+        del train_loader, val_loader, model, optimizer, scheduler
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 
 def evaluate_best_trial(study: optuna.Study) -> Dict[str, float]:
