@@ -1,0 +1,12 @@
+{
+  "status": "preliminary: old two-target BCE/combined-objective checkpoint; no proposed p_main-sum cut",
+  "checkpoint": "/Users/adeepsen/xenon_deepset_nn/Models/deepset_variations/optuna_sweep/optuna_graph_pooling_checkpoints/trial_0004/best.pt",
+  "trial_number": 4,
+  "checkpoint_epoch": 184,
+  "test_clusters": 1027230,
+  "test_events": 306724,
+  "test_p_main_r2": 0.7432966232299805,
+  "test_p_main_mse": 0.06290546804666519,
+  "scatter_sample_size": 100000,
+  "figure": "/Users/adeepsen/xenon_deepset_nn/analysis/wandb_output/preliminary_pmain_regression/test_pmain_predicted_vs_true.png"
+}

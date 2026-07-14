@@ -1,0 +1,1005 @@
+06/01/2026
+Today's focus was on familiarizing myself with the papers and project brief
+
+
+XENONnT Experiment 
+Dual phase Time Projection Chamber(TPC)
+Neutron scatters upon entering chamber, creating several spatially distinct energy deposits
+Each deposit creates a cluster of ionized electrons, which produce light, known as an S1 signal
+These signals are detected by photomultiplier tubes (PMT)
+Energized electrons float to the top of the chamber, where they interact with gaseous xenon to once again photoluminesce, known as an S2 signal
+The drift time can be calculated by comparing S2 and S1 signal times, which can then be used to reconstruct the depth of the initial interaction
+After reconstructing the trigger events, two S2 events are of special importance, the largest (main S2) and the second largest (alt S2)
+
+S2 Tagging Project Description
+Main goal is to determine whether set level context between clusters carries relevant information for the sake of S2 tagging, in which case Deep Sets are a viable tool
+Hierarchically we have:
+Event: 1 neutron scatters within TPC
+Cluster: Individual energy deposits, 1 neutron scattering can produce many clusters. 
+For each cluster we aim to determine p_main and p_alt, the percent of contribution to the S2 main and S2 alt peaks of each cluster
+Cluster features
+X,y (cm) - Transverse position
+N_electrons_interface (electrons) - ionized electrons that survived drift
+Drift_time_mean (ns) - mean drift time (max of 2.2 ms = full TPC drift)
+Drift_time_spread (ns) - Longitudinal diffusion sigma 
+Event_number (int) - geant4 event index, shared across clusters from one neutron
+
+Deep Sets
+Provides a framework for creating any permutation invariant function of the form f(X) = ((x))
+For this project, phi is a transformation into our feature vector of dimension L, and rho is our transformation to determining p_main and p_alt
+Functionally these are both going to be layers of the neural network
+Universal Representation of Permutation-Invariant Functions on Vectors and Tensors
+Important takeaway is the size of L, which is the dimension of our “intermediate step” vector: the features extracted from our initial data set to describe the data
+Worst case L: O(N^D) ,
+ for us N = 118, D=5 giving us a worst case bound of order 10^10
+Thankfully for me, a practical L will be in the range of 16-128, as the worst case scenario does not represent the real physics
+I will have to sweep L from 8->128 or wherever increasing L does not provide significant gains in accuracy of the model
+
+
+From Pueh:
+relu activation function
+Mse loss function
+
+
+06/02/2026
+Today’s focus is to explore the simulation data provided; all plots, as well as source data, can be found under the data folder
+Python scripts are available in the GitHub repo (currently private)
+
+
+I generated histograms representing each feature.
+x,y
+Odd scaling, mean x: -42? Mean y on the other hand is 26. Likely not centered around 0, should seek clarification though
+Cluster count is massively skewed to the low end, initial concerns about worst case feature vector size are probably not an issue, with 99% of events <= 21 clusters and 95% <= 11 
+
+P_main and p_alt
+Almost entirely binary: contributions come wholly from 1 cluster or another, with little fractional contributions
+
+Electron count
+Not always the primary contributor? 
+Looking at event 4 is a case where the primary contributor is not the cluster with the most electrons, makes a good case for deep sets
+Still generally dominant factor in determining p_main p_alt
+
+Normalization of drift time?
+I did not personally take note of this issue but ChatGPT seems to think the difference in scale between drift count(order of 10e5) compared to electron count (order of 10) will be significant if not z scored
+
+
+Created the argmax baseline:
+Assigns cluster with highest electron count p_main = 1, and the second-highest electron count cluster p_alt = 1. 
+Had to test using a smaller sample from the data set(10000 events) for the sake of time
+Event-level argmax baseline
+Main accuracy: 0.7072
+Alt accuracy: 0.5402169319622482
+Indicates electron count is dominant for the main signal, but less so for alt
+
+
+Fields:
+('x', 'y', 'n_electrons_interface', 'drift_time_mean', 'drift_time_spread', 'event_number', 'p_main', 'p_alt')
+
+Dataset Summary
+----------------
+Total clusters: 10259121
+Total events: 2704607
+Mean clusters/event: 3.7932021177198756
+Median clusters/event: 2.0
+Max clusters/event: 118
+95th percentile: 11.0
+99th percentile: 21.0
+
+Feature Statistics
+------------------
+
+x
+min : -66.39956
+max : 66.37299
+mean: -42.060238
+std : 17.390944
+
+y
+min : -66.34984
+max : 66.399956
+mean: 26.43501
+std : 18.419184
+
+n_electrons_interface
+min : 0
+max : 336
+mean: 32.6973354734777
+std : 41.75159373616201
+
+drift_time_mean
+min : 3688.0
+max : 2217524.0
+mean: 549514.3
+std : 325935.22
+
+drift_time_spread
+min : 92.0
+max : 7373.0
+mean: 3047.682
+std : 1060.3771
+
+Example Events
+--------------
+
+Event 0
+Clusters: 6
+[(10, 560139., 1., 0.) (10, 433814., 0., 1.) (17, 546620., 1., 0.)
+ ( 9, 533079., 1., 0.) ( 5, 797316., 0., 0.) ( 9, 818020., 0., 0.)]
+
+Event 1
+Clusters: 1
+[(228, 500950., 1., 0.)]
+
+Event 2
+Clusters: 7
+[( 39,  654216., 0., 0.) ( 30,  679255., 0., 0.) ( 27,  705945., 1., 0.)
+ ( 75,  711900., 1., 0.) (142,  709775., 1., 0.) ( 88, 1004351., 0., 1.)
+ ( 19, 1048075., 0., 0.)]
+
+Event 3
+Clusters: 7
+[( 1, 481624., 1., 0.) (50, 466382., 1., 0.) (13, 466494., 1., 0.)
+ (23, 469188., 1., 0.) (20, 615461., 0., 1.) (20, 619379., 0., 1.)
+ (13, 672164., 0., 0.)]
+
+Event 4
+Clusters: 3
+[(46, 278526., 1.        , 0.        )
+ (57, 263530., 0.03865546, 0.96134454)
+ (18, 148067., 0.        , 0.        )]
+
+p_alt > 1: 2073
+p_main > 1: 0
+
+
+06/03/2026
+Today, I focus on why some values of p_alt are greater than 1 (2073 clusters out of 10,259,121 clusters or .02% of clusters)
+The write-up assumes that this is due to a numerical artifact in the simulator at short drift times
+I examined the drift time of these clusters; the findings seem consistent with the above assumption
+Max drift time possible is 2.2 ms or 2.2e6 ns
+Median drift time: 12382.0 ns
+This is a very short drift time
+Drift time means by percentile (0, 25, 50, 75, 100)
+[ 3707.  8131. 12382. 17703. 49696.]
+Again, very short drift times
+I am inclined to believe that this really is caused by some artifacting in the simulation 
+The question is what to do with the data: should I just round p_mains down, or remove it? Removing the data would mean eliminating cases with short drift times, and I do not think that would be good. 
+The cluster with p_alt > 1 always has a significantly shorter drift time than the other clusters in the events
+Electron count doesn't appear significant; there are anomalies in every part of the range of count
+
+After speaking to Pueh, she pointed out that we don’t use the top 13 cm of the TPC for measurements. Likely by cutting out all events with drift time that would have a cluster within those top 13 cm, I can eliminate all p_alt > 1 clusters?
+
+Getting drift velocity from this paper: https://arxiv.org/pdf/2409.08778 
+0.675 ± 0.006) mm/μs at 23 V/cm
+Using this velocity, we remove all events with a cluster that contains a drift time < 192600 ns
+Doing this and then checking the p_alt > 1 clusters, we see that there are now 0 such cases in the remaining data, indicating Pueh may have been correct in her assumption.  
+Events removed: 659756
+
+Rebuilt argmax model to account for removing top 13 cm (Still sampling for performance):
+(base) adeepsen@sandbox221 Models % python argmax.py
+Events removed: 659782
+Remaining p_alt > 1: 0
+Event-level argmax baseline on fiducial data
+Main accuracy: 0.7251
+Alt accuracy: 0.5530537159676232
+
+
+
+Made the per cluster mlp baseline: It lacks the context between clusters that deep sets would have
+(base) adeepsen@sandbox221 Models % python mlp.py
+Rows after fiducial cut: 6838889
+Remaining p_alt > 1: 0
+Epoch 01 | train 0.1792 | val 0.1762
+Epoch 02 | train 0.1763 | val 0.1756
+Epoch 03 | train 0.1761 | val 0.1755
+Epoch 04 | train 0.1759 | val 0.1754
+Epoch 05 | train 0.1759 | val 0.1753
+Epoch 06 | train 0.1758 | val 0.1753
+Epoch 07 | train 0.1758 | val 0.1752
+Epoch 08 | train 0.1757 | val 0.1752
+Epoch 09 | train 0.1757 | val 0.1752
+Epoch 10 | train 0.1757 | val 0.1751
+Test MSE: 0.17543884
+Test p_main ROC-AUC: 0.7720476399924875
+Test p_alt ROC-AUC: 0.6179356321239522
+Event-level main accuracy: 0.7209184804580013
+
+Decent result for p_main, p_alt sucking is not surprising, seeing as it's an inherently relative measurement being predicted by a model that isn’t able to compare clusters
+Event level main accuracy is basically identical to argmax
+
+
+Met with Pueh, 72 accuracy is OKAY but I should try several things:
+Graph error of testing and validation using weights and biases
+Increase epochs (10 is really low)
+Use a learning rate scheduler
+Use google colab to see if a gpu is any faster
+Make sure z score calculations(standardizations) aren’t pulling means and std devs from the entire data set. They should only be standardizing off their own data
+After running 50 epochs with the above changes, the validation loss changed by 0.1751−0.1750=0.0001
+I had to kill the run to go home but heres the data:
+Rows after fiducial cut: 6838889
+Remaining p_alt > 1: 0
+Train rows: 4783620
+Val rows: 1028039
+Test rows: 1027230
+Using device: cpu
+Epoch 01 | train 0.1791 | val 0.1761 | lr 1.00e-03
+Epoch 02 | train 0.1763 | val 0.1757 | lr 1.00e-03
+Epoch 03 | train 0.1761 | val 0.1756 | lr 1.00e-03
+Epoch 04 | train 0.1760 | val 0.1754 | lr 1.00e-03
+Epoch 05 | train 0.1759 | val 0.1754 | lr 1.00e-03
+Epoch 06 | train 0.1758 | val 0.1753 | lr 1.00e-03
+Epoch 07 | train 0.1758 | val 0.1754 | lr 1.00e-03
+Epoch 08 | train 0.1758 | val 0.1753 | lr 1.00e-03
+Epoch 09 | train 0.1757 | val 0.1753 | lr 1.00e-03
+Epoch 10 | train 0.1757 | val 0.1753 | lr 1.00e-03
+Epoch 11 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 12 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 13 | train 0.1757 | val 0.1753 | lr 1.00e-03
+Epoch 14 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 15 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 16 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 17 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 18 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 19 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 20 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 21 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 22 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 23 | train 0.1756 | val 0.1751 | lr 5.00e-04
+Epoch 24 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 25 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 26 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 27 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 28 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 29 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 30 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 31 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 32 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 33 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 34 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 35 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 36 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 37 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 38 | train 0.1755 | val 0.1750 | lr 6.25e-05
+Epoch 39 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Epoch 40 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Epoch 41 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Epoch 42 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Epoch 43 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Epoch 44 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Epoch 45 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Epoch 46 | train 0.1754 | val 0.1750 | lr 1.56e-05
+Epoch 47 | train 0.1754 | val 0.1750 | lr 1.56e-05
+Epoch 48 | train 0.1754 | val 0.1750 | lr 1.56e-05
+Epoch 49 | train 0.1754 | val 0.1750 | lr 1.56e-05
+Epoch 50 | train 0.1754 | val 0.1750 | lr 7.81e-06
+
+
+
+(base) adeepsen@sandbox221 Models % python mlp.py
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /Users/adeepsen/.netrc.
+wandb: Currently logged in as: senadeep5 (senadeep5-clemson-university) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.27.0
+wandb: Run data is saved locally in /Users/adeepsen/xenon_deepset_nn/Models/wandb/run-20260603_191352-a9eoesxd
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run clean-dew-4
+wandb: ⭐️ View project at https://wandb.ai/senadeep5-clemson-university/xenon-mlp
+wandb: 🚀 View run at https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/a9eoesxd
+Rows after fiducial cut: 6838889
+Remaining p_alt > 1: 0
+Train rows: 4783620
+Val rows: 1028039
+Test rows: 1027230
+Using device: cpu
+Epoch 01 | train 0.1789 | val 0.1760 | lr 1.00e-03
+Epoch 02 | train 0.1763 | val 0.1757 | lr 1.00e-03
+Epoch 03 | train 0.1760 | val 0.1754 | lr 1.00e-03
+Epoch 04 | train 0.1759 | val 0.1753 | lr 1.00e-03
+Epoch 05 | train 0.1758 | val 0.1752 | lr 1.00e-03
+Epoch 06 | train 0.1758 | val 0.1752 | lr 1.00e-03
+Epoch 07 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 08 | train 0.1757 | val 0.1751 | lr 1.00e-03
+Epoch 09 | train 0.1757 | val 0.1751 | lr 1.00e-03
+Epoch 10 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 11 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 12 | train 0.1756 | val 0.1750 | lr 1.00e-03
+Epoch 13 | train 0.1756 | val 0.1750 | lr 1.00e-03
+Epoch 14 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 15 | train 0.1756 | val 0.1752 | lr 1.00e-03
+Epoch 16 | train 0.1756 | val 0.1750 | lr 1.00e-03
+Epoch 17 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 18 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 19 | train 0.1756 | val 0.1750 | lr 1.00e-03
+Epoch 20 | train 0.1756 | val 0.1751 | lr 5.00e-04
+Epoch 21 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 22 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 23 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 24 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 25 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 26 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 27 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 28 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 29 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 30 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 31 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 32 | train 0.1754 | val 0.1750 | lr 1.25e-04
+Epoch 33 | train 0.1754 | val 0.1750 | lr 1.25e-04
+Epoch 34 | train 0.1754 | val 0.1750 | lr 1.25e-04
+Epoch 35 | train 0.1754 | val 0.1749 | lr 6.25e-05
+Epoch 36 | train 0.1754 | val 0.1749 | lr 6.25e-05
+Epoch 37 | train 0.1754 | val 0.1749 | lr 6.25e-05
+Epoch 38 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Epoch 39 | train 0.1754 | val 0.1749 | lr 3.13e-05
+Epoch 40 | train 0.1754 | val 0.1749 | lr 3.13e-05
+Epoch 41 | train 0.1754 | val 0.1749 | lr 3.13e-05
+Epoch 42 | train 0.1754 | val 0.1749 | lr 3.13e-05
+Epoch 43 | train 0.1754 | val 0.1749 | lr 3.13e-05
+Epoch 44 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Epoch 45 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Epoch 46 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Epoch 47 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Epoch 48 | train 0.1754 | val 0.1749 | lr 7.81e-06
+Epoch 49 | train 0.1754 | val 0.1749 | lr 7.81e-06
+Epoch 50 | train 0.1754 | val 0.1749 | lr 7.81e-06
+2026-06-03 19:43:46.714 python[34652:553033] +[CATransaction synchronize] called within transaction
+Eval events: 50000
+Eval rows: 167370
+Test MSE: 0.17540573
+Test p_main ROC-AUC: 0.772016832916202
+Test p_alt ROC-AUC: 0.6191298171111936
+Event-level main accuracy: 0.71948
+wandb: 
+wandb: Run history:
+wandb:                     epoch ▁▁▁▁▂▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▅▆▆▆▆▆▆▇▇▇▇▇███
+wandb:               eval_events ▁
+wandb:                 eval_rows ▁
+wandb: event_level_main_accuracy ▁
+wandb:             learning_rate ███████████████▄▄▄▄▄▃▃▃▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                  test_mse ▁
+wandb:            test_p_alt_auc ▁
+wandb:           test_p_main_auc ▁
+wandb:                train_loss █▃▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                  val_loss █▆▄▄▃▃▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:                     epoch 50
+wandb:               eval_events 50000
+wandb:                 eval_rows 167370
+wandb: event_level_main_accuracy 0.71948
+wandb:             learning_rate 1e-05
+wandb:                  test_mse 0.17541
+wandb:            test_p_alt_auc 0.61913
+wandb:           test_p_main_auc 0.77202
+wandb:                train_loss 0.17542
+wandb:                  val_loss 0.17494
+wandb: 
+wandb: 🚀 View run clean-dew-4 at: https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/a9eoesxd
+wandb: ⭐️ View project at: https://wandb.ai/senadeep5-clemson-university/xenon-mlp
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260603_191352-a9eoesxd/logs
+
+
+
+06/08/2026
+Today I’m setting up my environment on spaghetti, our resident computing power. 
+Installed conda
+Made an environment called “ml”
+Cloned the repo, used the requirements file to download packages
+Ran the mlp baseline on spaghetti. Was able to get through the entire test set without having to sample using the gpu. 
+(ml) adeeps@spaghetti:~/projects/xenon_deepset_nn/Models$ python mlp.py
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/adeeps/.netrc.
+wandb: Currently logged in as: senadeep5 (senadeep5-clemson-university) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.27.2
+wandb: Run data is saved locally in /home/adeeps/projects/xenon_deepset_nn/Models/wandb/run-20260608_123029-d0qlvka7
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run tough-firefly-9
+wandb: ⭐️ View project at https://wandb.ai/senadeep5-clemson-university/xenon-mlp
+wandb: 🚀 View run at https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/d0qlvka7
+Rows after fiducial cut: 6838889
+Remaining p_alt > 1: 0
+Train rows: 4783620
+Val rows: 1028039
+Test rows: 1027230
+Using device: cuda
+Epoch 01 | train 0.1791 | val 0.1761 | lr 1.00e-03
+Epoch 02 | train 0.1763 | val 0.1757 | lr 1.00e-03
+Epoch 03 | train 0.1761 | val 0.1755 | lr 1.00e-03
+Epoch 04 | train 0.1760 | val 0.1754 | lr 1.00e-03
+Epoch 05 | train 0.1759 | val 0.1754 | lr 1.00e-03
+Epoch 06 | train 0.1758 | val 0.1753 | lr 1.00e-03
+Epoch 07 | train 0.1758 | val 0.1753 | lr 1.00e-03
+Epoch 08 | train 0.1757 | val 0.1753 | lr 1.00e-03
+Epoch 09 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 10 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Eval events: 306724
+Eval rows: 1027230
+Test MSE: 0.17550412
+Test p_main ROC-AUC: 0.7718802055669731
+Test p_alt ROC-AUC: 0.6171730565069594
+Event-level main accuracy: 0.7202338258499498
+wandb: 
+wandb: Run history:
+wandb:                     epoch ▁▂▃▃▄▅▆▆▇█
+wandb:               eval_events ▁
+wandb:                 eval_rows ▁
+wandb: event_level_main_accuracy ▁
+wandb:             learning_rate ▁▁▁▁▁▁▁▁▁▁
+wandb:                  test_mse ▁
+wandb:            test_p_alt_auc ▁
+wandb:           test_p_main_auc ▁
+wandb:                train_loss █▂▂▂▁▁▁▁▁▁
+wandb:                  val_loss █▅▃▃▃▂▂▂▁▁
+wandb: 
+wandb: Run summary:
+wandb:                     epoch 10
+wandb:               eval_events 306724
+wandb:                 eval_rows 1027230
+wandb: event_level_main_accuracy 0.72023
+wandb:             learning_rate 0.001
+wandb:                  test_mse 0.1755
+wandb:            test_p_alt_auc 0.61717
+wandb:           test_p_main_auc 0.77188
+wandb:                train_loss 0.17569
+wandb:                  val_loss 0.17519
+wandb: 
+wandb: 🚀 View run tough-firefly-9 at: https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/d0qlvka7
+wandb: ⭐️ View project at: https://wandb.ai/senadeep5-clemson-university/xenon-mlp
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260608_123029-d0qlvka7/logs
+(ml) adeeps@spaghetti:~/projects/xenon_deepset_nn/Models$ 
+
+
+
+Running again for 100 epochs, testing over whole set. Added checkpoints that save the most accurate stage of the models training. 
+https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/w6ouorc9?nw=nwusersenadeep5 
+(ml) adeeps@spaghetti:~/projects/xenon_deepset_nn/Models$ python mlp.py
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/adeeps/.netrc.
+wandb: Currently logged in as: senadeep5 (senadeep5-clemson-university) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.27.2
+wandb: Run data is saved locally in /home/adeeps/projects/xenon_deepset_nn/Models/wandb/run-20260608_135555-w6ouorc9
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run olive-lake-11
+wandb: ⭐️ View project at https://wandb.ai/senadeep5-clemson-university/xenon-mlp
+wandb: 🚀 View run at https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/w6ouorc9
+Rows after fiducial cut: 6838889
+Remaining p_alt > 1: 0
+Train rows: 4783620
+Val rows: 1028039
+Test rows: 1027230
+Using device: cuda
+Epoch 01 | train 0.1784 | val 0.1759 | lr 1.00e-03
+Saved new best checkpoint at epoch 1
+Epoch 02 | train 0.1762 | val 0.1756 | lr 1.00e-03
+Saved new best checkpoint at epoch 2
+Epoch 03 | train 0.1760 | val 0.1754 | lr 1.00e-03
+Saved new best checkpoint at epoch 3
+Epoch 04 | train 0.1759 | val 0.1753 | lr 1.00e-03
+Saved new best checkpoint at epoch 4
+Epoch 05 | train 0.1758 | val 0.1753 | lr 1.00e-03
+Epoch 06 | train 0.1758 | val 0.1753 | lr 1.00e-03
+Epoch 07 | train 0.1757 | val 0.1751 | lr 1.00e-03
+Saved new best checkpoint at epoch 7
+Epoch 08 | train 0.1757 | val 0.1751 | lr 1.00e-03
+Epoch 09 | train 0.1757 | val 0.1752 | lr 1.00e-03
+Epoch 10 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Saved new best checkpoint at epoch 10
+Epoch 11 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Saved new best checkpoint at epoch 11
+Epoch 12 | train 0.1756 | val 0.1752 | lr 1.00e-03
+Epoch 13 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Saved new best checkpoint at epoch 13
+Epoch 14 | train 0.1756 | val 0.1751 | lr 1.00e-03
+Epoch 15 | train 0.1756 | val 0.1750 | lr 1.00e-03
+Saved new best checkpoint at epoch 15
+Epoch 16 | train 0.1756 | val 0.1750 | lr 1.00e-03
+Saved new best checkpoint at epoch 16
+Epoch 17 | train 0.1756 | val 0.1751 | lr 5.00e-04
+Epoch 18 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Saved new best checkpoint at epoch 18
+Epoch 19 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 20 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Epoch 21 | train 0.1755 | val 0.1750 | lr 5.00e-04
+Saved new best checkpoint at epoch 21
+Epoch 22 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Saved new best checkpoint at epoch 22
+Epoch 23 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Saved new best checkpoint at epoch 23
+Epoch 24 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Saved new best checkpoint at epoch 24
+Epoch 25 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Saved new best checkpoint at epoch 25
+Epoch 26 | train 0.1755 | val 0.1750 | lr 2.50e-04
+Epoch 27 | train 0.1755 | val 0.1750 | lr 1.25e-04
+Epoch 28 | train 0.1754 | val 0.1750 | lr 1.25e-04
+Saved new best checkpoint at epoch 28
+Epoch 29 | train 0.1754 | val 0.1750 | lr 1.25e-04
+Epoch 30 | train 0.1754 | val 0.1750 | lr 1.25e-04
+Epoch 31 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Epoch 32 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Saved new best checkpoint at epoch 32
+Epoch 33 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Saved new best checkpoint at epoch 33
+Epoch 34 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Epoch 35 | train 0.1754 | val 0.1750 | lr 6.25e-05
+Saved new best checkpoint at epoch 35
+Epoch 36 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Epoch 37 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Saved new best checkpoint at epoch 37
+Epoch 38 | train 0.1754 | val 0.1750 | lr 3.13e-05
+Epoch 39 | train 0.1754 | val 0.1749 | lr 3.13e-05
+Saved new best checkpoint at epoch 39
+Epoch 40 | train 0.1754 | val 0.1750 | lr 1.56e-05
+Epoch 41 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Saved new best checkpoint at epoch 41
+Epoch 42 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Saved new best checkpoint at epoch 42
+Epoch 43 | train 0.1754 | val 0.1749 | lr 1.56e-05
+Saved new best checkpoint at epoch 43
+Epoch 44 | train 0.1754 | val 0.1749 | lr 7.81e-06
+Saved new best checkpoint at epoch 44
+Epoch 45 | train 0.1754 | val 0.1749 | lr 7.81e-06
+Epoch 46 | train 0.1754 | val 0.1749 | lr 7.81e-06
+Saved new best checkpoint at epoch 46
+Epoch 47 | train 0.1754 | val 0.1749 | lr 7.81e-06
+Epoch 48 | train 0.1754 | val 0.1749 | lr 3.91e-06
+Epoch 49 | train 0.1754 | val 0.1749 | lr 3.91e-06
+Saved new best checkpoint at epoch 49
+Epoch 50 | train 0.1754 | val 0.1749 | lr 3.91e-06
+Epoch 51 | train 0.1754 | val 0.1749 | lr 3.91e-06
+Epoch 52 | train 0.1754 | val 0.1749 | lr 1.95e-06
+Epoch 53 | train 0.1754 | val 0.1749 | lr 1.95e-06
+Epoch 54 | train 0.1754 | val 0.1749 | lr 1.95e-06
+Epoch 55 | train 0.1754 | val 0.1749 | lr 1.95e-06
+Epoch 56 | train 0.1754 | val 0.1749 | lr 9.77e-07
+Epoch 57 | train 0.1754 | val 0.1749 | lr 9.77e-07
+Epoch 58 | train 0.1754 | val 0.1749 | lr 9.77e-07
+Epoch 59 | train 0.1754 | val 0.1749 | lr 9.77e-07
+Epoch 60 | train 0.1754 | val 0.1749 | lr 4.88e-07
+Epoch 61 | train 0.1754 | val 0.1749 | lr 4.88e-07
+Epoch 62 | train 0.1754 | val 0.1749 | lr 4.88e-07
+Epoch 63 | train 0.1754 | val 0.1749 | lr 4.88e-07
+Epoch 64 | train 0.1754 | val 0.1749 | lr 2.44e-07
+Epoch 65 | train 0.1754 | val 0.1749 | lr 2.44e-07
+Epoch 66 | train 0.1754 | val 0.1749 | lr 2.44e-07
+Epoch 67 | train 0.1754 | val 0.1749 | lr 2.44e-07
+Epoch 68 | train 0.1754 | val 0.1749 | lr 1.22e-07
+Epoch 69 | train 0.1754 | val 0.1749 | lr 1.22e-07
+Epoch 70 | train 0.1754 | val 0.1749 | lr 1.22e-07
+Epoch 71 | train 0.1754 | val 0.1749 | lr 1.22e-07
+Epoch 72 | train 0.1754 | val 0.1749 | lr 6.10e-08
+Epoch 73 | train 0.1754 | val 0.1749 | lr 6.10e-08
+Epoch 74 | train 0.1754 | val 0.1749 | lr 6.10e-08
+Epoch 75 | train 0.1754 | val 0.1749 | lr 6.10e-08
+Epoch 76 | train 0.1754 | val 0.1749 | lr 3.05e-08
+Epoch 77 | train 0.1754 | val 0.1749 | lr 3.05e-08
+Epoch 78 | train 0.1754 | val 0.1749 | lr 3.05e-08
+Epoch 79 | train 0.1754 | val 0.1749 | lr 3.05e-08
+Epoch 80 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 81 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 82 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 83 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 84 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 85 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 86 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 87 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 88 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 89 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 90 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 91 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 92 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 93 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 94 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 95 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 96 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 97 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 98 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 99 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Epoch 100 | train 0.1754 | val 0.1749 | lr 1.53e-08
+Eval events: 306724
+Eval rows: 1027230
+Test MSE: 0.17526996
+Test p_main ROC-AUC: 0.7724308286949999
+Test p_alt ROC-AUC: 0.6191250039024141
+Event-level main accuracy: 0.7207456866759693
+wandb: 
+wandb: Run history:
+wandb:                     epoch ▁▁▁▁▁▂▂▂▂▂▃▃▃▃▃▃▄▄▄▄▄▄▅▅▅▅▅▆▆▆▆▇▇▇▇▇▇███
+wandb:               eval_events ▁
+wandb:                 eval_rows ▁
+wandb: event_level_main_accuracy ▁
+wandb:             learning_rate ███████▄▄▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                  test_mse ▁
+wandb:            test_p_alt_auc ▁
+wandb:           test_p_main_auc ▁
+wandb:                train_loss █▇▅▄▄▂▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                  val_loss █▆▅▅▃▃▄▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:                     epoch 100
+wandb:               eval_events 306724
+wandb:                 eval_rows 1027230
+wandb: event_level_main_accuracy 0.72075
+wandb:             learning_rate 0.0
+wandb:                  test_mse 0.17527
+wandb:            test_p_alt_auc 0.61913
+wandb:           test_p_main_auc 0.77243
+wandb:                train_loss 0.17541
+wandb:                  val_loss 0.17495
+wandb: 
+wandb: 🚀 View run olive-lake-11 at: https://wandb.ai/senadeep5-clemson-university/xenon-mlp/runs/w6ouorc9
+wandb: ⭐️ View project at: https://wandb.ai/senadeep5-clemson-university/xenon-mlp
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260608_135555-w6ouorc9/logs
+(ml) adeeps@spaghetti:~/projects/xenon_deepset_nn/Models$ 
+
+Continued developing a deep-set model:
+The data is grouped in clusters by event number
+Tensors must have the same size, so when we have events with varying amounts of clusters(which we always do), PyTorch is gonna get mad. 
+Therefore, we must take the largest amount of clusters in the group, and make all the events have that many clusters through padding with clusters with values of all 0s
+This use of padding can trick the model with false data, so we use a mask to differentiate between these fake padded clusters and the real ones with data we want, so that the model can differentiate them later
+
+The actual deep set model was constructed, which does
+Applies the phi function to each set
+Uses the mask to sum over the clusters
+Does the event embedding to each cluster and then applies rho to decode back to p-values
+Data and preprocessing
+We kept the same input features throughout: x, y, n_electrons_interface, drift_time_mean, and drift_time_spread. The targets are p_main and p_alt.
+We applied the 13 cm fiducial cut at the event level using event_number and the minimum drift_time_mean in each event; any event with a cluster above that boundary was removed.
+We clipped p_alt to [0, 1] to remove the rare simulator artifact.
+We used a train/validation/test split of 70% / 15% / 15%, split by event rather than by cluster so that clusters from the same event never leak across splits.
+We fit the StandardScaler on the training split only, then applied it to validation and test.
+Dataset and batching
+We turned the data into an event dataset, where each item is one variable-size set of clusters belonging to a single event.
+We used a custom collate_fn that pads events in a batch to the largest event size in that batch and builds a boolean mask so padded rows can be ignored.
+We used standard DataLoaders for train/val/test, with the batch size coming from W&B.
+Model architecture
+The model is a DeepSet with a per-cluster encoder phi and a decoder rho.
+phi is a 2-layer MLP: 5 -> phi_hidden -> latent_dim.
+rho is a 2-layer MLP: 2 * latent_dim -> rho_hidden -> 2.
+The latent embedding size L was set to 64 for the first run.
+The hidden sizes for both phi and rho were set to 64.
+The model processes each cluster independently through phi, masks padded clusters, sums across clusters to get an event embedding, then broadcasts that event embedding back to every cluster before decoding.
+The output is two values per cluster: one for p_main and one for p_alt.
+Loss and optimization
+We chose Adam as the optimizer with learning rate 1e-3.
+We used binary cross-entropy with logits rather than MSE, because the targets are probability-like soft labels in [0, 1].
+We used a masked BCE loss so padded clusters do not contribute to the objective.
+In the forward path, probabilities are recovered with torch.sigmoid(logits) for metrics and reporting, while training stays in logit space for numerical stability.
+Training and evaluation
+The training loop runs for 10 epochs.
+Every epoch computes train and validation loss, plus ROC-AUC for p_main and p_alt.
+We keep the best model by validation loss, not by training loss or AUC.
+After training, we restore the best checkpoint and run a final test evaluation.
+Metric-wise, we used cluster-level ROC-AUC for p_main and p_alt.
+Runtime / hardware choices we discussed
+Because this is running on a GTX 1080, we decided to favor a smaller batch size, pin_memory, non_blocking=True transfers, and a few DataLoader workers so the GPU stays fed.
+We also decided to save the best checkpoint locally during training, since the job runs on a remote server.
+
+
+Currently having issues with CPU bottleneck. Processing the arrays is 100% CPU util while also taking quite some time, GPU is not getting fed
+
+Try changing raw data format?
+
+
+06/09/2026
+I optimized the hell out of the deep set algorithm today by having data processing done once and then saved to a cache, since I'm using the same data set every time
+
+Ran a 100 epoch L=64 run, results are meh, need to make them directly comparable to the baselines
+
+
+
+Created a weights and biases sweep file, sweeps through 
+   "parameters": {
+       "batch_size": {"values": [256, 512]},
+       "epochs": {"value": 100},
+       "learning_rate": {"values": [1e-4, 3e-4, 1e-3, 3e-3]},
+       "latent_dim": {"values": [16, 32, 64, 128, 256]},
+       "phi_hidden": {"values": [32, 64, 128]},
+       "rho_hidden": {"values": [32, 64, 128]},
+       "num_workers": {"value": 4},
+
+https://wandb.ai/senadeep5-clemson-university/xenon-deepset/sweeps/v3mv3s4q 
+
+Just gonna leave that running probably take all day
+
+
+06/15/2026
+Over the weekend sweep finished running. Best run by far is: https://wandb.ai/senadeep5-clemson-university/xenon-deepset/sweeps/v3mv3s4q/runs/f2jklmbo/logs?nw=nwusersenadeep5 (Pueh: I can’t see this btw..)
+
+
+Metric
+MLP
+DeepSet
+
+
+Event Accuracy
+72.07%
+73.41%
+
+
+p_main AUC
+0.772
+0.958
+
+
+p_alt AUC
+0.619
+0.870
+
+
+Event-level context contains useful information, but most of the information needed to identify the primary cluster is already present at the cluster level. The event context substantially improves probability estimation while only modestly improving event-level selection accuracy.
+
+Talked with Pueh, new goals:
+Weaknesses of sweep:
+No lr scheduler, 100 epochs is low
+Should pick strongest run, use a scheduler, run it for way more epochs
+Why is event main accuracy so much worse than auc?
+Need to clear tech debt, should understand architecture better
+Best run had 
+Phi hidden, rho hidden : 128
+Latent dim: 64
+Probably should sweep higher hidden dimensions
+I have two options:
+Widen the architecture, increase the layer width
+Deepen architecture, add more layers
+Probably a better option 
+
+
+06/17/2026
+
+Scheduler looks like it's killing promising runs early, 
+
+Ran a version of the deep set that uses Pueh’s pooling to handle variable size data as opposed to padding and masking. 
+https://wandb.ai/senadeep5-clemson-university/xenon-pooling/runs/c73d7m1u?nw=nwusersenadeep5 
+Doesn’t seem to noticeably improve accuracy, but also doesn’t hurt it, results are roughly equal with the equivalent run using masking/padding. 
+
+
+06/18/2026
+It seems like no matter what the event main accuracy is gonna top out ~70%, with some variation based off dimension size
+
+Maybe can try a different loss function? Currently using MSE
+Should deepen model before changing loss function
+
+06/22/2026  
+Exported all the run data into a csv file, it's in the data folder of this drive
+
+AI calculated correlation:
+Parameter
+Correlation with test_mean_auc
+rho_hidden
+0.87
+phi_hidden
+0.75
+latent_dim
+0.57
+batch_size
+0.19
+learning_rate
+0.09
+weight_decay
+-0.76
+
+
+Weight decay is hurting scores by a lot? Does weight decay even make sense to have for a model like this, where electron count is likely going to dominate the feature importance?
+
+I really need to summarize the events that are being accurately identified vs those that aren’t somehow
+
+I reviewed the model to try to make sure I understand the architecture, here is my current understanding:
+
+Data handling
+One training example is an event, which has several clusters each with the 5 features
+Events are split by event number, so clusters within an event stay together
+Before training, all events that are above that 13 cm threshold are dropped
+Events are split 70/15/15 train/val/test
+features are fitted with a standard scalar to avoid unit comparisons
+Batching
+Collate function pads all events to have the same amount of clusters and masks them so the model knows which ones are real data
+Encoding
+Linear(5 -> PHI_HIDDEN)
+ReLU
+Linear(PHI_HIDDEN -> LATENT_DIM)
+ReLU
+Masked pooling over event (I need to revisit this I still don’t 100% get it)
+After pooling the event context is expanded to every cluster in the event, which is what allows the deep set to have set level context of all the clusters within the event
+Predictions
+The final layer condenses the previous layers and outputs 2 values for each cluster, p_alt and p_main
+Loss function
+Currently using Binary Cross Entropy(BCE) 
+
+Trying 3 layer deep set: 
+LATENT_DIM = 128
+PHI_HIDDEN = 512
+PHI_HIDDEN_2 = 512
+HEAD_HIDDEN = 512
+HEAD_HIDDEN_2 = 256
+LEARNING_RATE = 1e-3
+WEIGHT_DECAY = 0.0
+BATCH_SIZE = 512
+MAX_EPOCHS = 500
+EARLY_STOPPING_PATIENCE = 100
+NUM_WORKERS = 4
+https://wandb.ai/senadeep5-clemson-university/xenon-pooling/runs/3yeab7lu 
+
+The only architectural change is the addition of another layer, should still look at other changes I can explore
+Adam vs AdamW
+This run is the exact same 2 layer architecture with pooling, just running AdamW instead of Adam and cosine instead of reduce lr on plateau
+https://wandb.ai/senadeep5-clemson-university/xenon-pooling/runs/50g8sd0p 
+Explore the data that is being missed on vs what is correctly identified
+Why is auc so much higher than event main accuracy?
+Auc is only checking if the model consistently ranks “high scoring” clusters highly, while not caring if they are ranked in the correct order. Event main accuracy on the other hand, is very strict and only marks a good score if the model accurately predicted the correct clusters exactly.
+
+
+06/23/2026
+3 layer architecture finished running, results are meh
+Not a significant improvement compared to 2 layer, going to focus on actually looking at which events the model is messing up on
+
+https://wandb.ai/senadeep5-clemson-university/xenon-pooling/runs/c73ecd7m1u?nw=nwusersenadeep5
+This run is collecting event data sorted by accuracy
+
+06/24/2026
+Have summary statistics for the hits and misses of the model
+As the number of clusters increases, accuracy drops pretty much linearly?
+Median true main margin goes to 0 when theres more than 4 clusters
+That means in many high multiplicity events, the top true p_main value is tied with the second highest true p_main value
+
+
+frac_true_main_largest_electron
+frac_pred_main_largest_electron
+1
+1
+0.7696463723
+0.894135057
+0.6518405936
+0.8202096511
+0.5551652448
+0.7382249624
+0.4784622252
+0.6659970985
+0.3859582097
+0.5482117142
+0.2687372141
+0.412032732
+0.1866383881
+0.3229056204
+0.1333333333
+0.2
+
+I’m pretty sure this means the model is overestimating the largest electron count
+
+Check the graphs folder to see the graphs I generated
+Tie awareness seems to be able to provide a huge accuracy boost, rn argmax is selecting the first index when they have equal p_main scores otherwise.
+
+06/25/2026
+Current to do:
+Revisit the graph method of data handling
+Why did whatever I did earlier remove the curve bouncing
+Implement the graph thing correctly
+Conclusion: The “pooling” deepset version I had been using was the same as the earlier deepset model I used, but instead of sum pooling it was mean/max pooling. There was no geometric graph batching
+I have a run going now
+Tie awareness for model
+Testing tie awareness
+New loss function: Use pred vs true p_main and p_alt matrices to calculate distance, minimize this to train model
+Make sure the loss function is coupled with lr scheduler
+If we do this, then model likely gets better at predicting probability values, but not better at picking the top cluster
+Is AUC a better metric than event accuracy?
+
+
+06/30/2026
+The graph run from last week finished with a pretty quick runtime(41 min: <1 min per epoch), accuracy didn’t improve, but the run wasn’t bouncy in form, so use this method going forward?
+
+Apparently, we need p_main values for every cluster in an event, so MSE method for loss should be fine. Should really use a different metric than event main accuracy to analyze how well the model is reconstructing all p_main values
+Run with mse (3 layers)
+Should look into how I'm reporting MSE distances
+
+I also want to revisit adding layers to the deepset net, seeing as our accuracy metric didn’t know how to account for ties before. 
+Run
+
+Figure out why data was curvy before
+Most likely from using sum based encoding, mean/max encoding is what eliminated the wave shape
+
+MSE vs BCE
+BCE is slightly outperforming MSE in metrics
+How important is p_alt? It might be diluting quality of model, if all we need is p_main then what is the point of training for p_alt. 
+
+Activation function: look at softmax?
+
+07/01/2026
+With the point of the model being to accurately predict p_main for all clusters in an event, I think that event main accuracy isn’t the best metric
+
+Adding the following metrics so I can better gauge model effectiveness: run
+event_avg_p_main_mae
+event_avg_p_main_mse
+event_avg_p_main_kl
+top_2_tie_aware_accuracy
+Top_3_tie_aware_accuracy
+
+Gonna try the softmax thing too: run
+
+
+
+
+07/02/2026
+Softmax is not a good idea, metrics showed that p_main often sums to greater than 1, with mean sum being 1.5, which just doesn’t work with softmax well
+
+Improved metrics:
+Repeats findings that when the model misses, its usually an ambiguous case, and in terms of picking top 2 or 3 clusters its incredibly accurate, all metrics at the end of doc
+
+Im gonna get an optuna hyperparameter sweep running over the weekend, as well as a run of the deepset model to go for like 1000 epochs with a very generous patience, just to see if anything interesting happens
+
+Long baseline
+
+Optuna sweep 
+
+
+Final test results
+2026-07-01 19:57:35
+test_loss=0.2657
+2026-07-01 19:57:35
+test_mse=0.0799
+2026-07-01 19:57:35
+test_p_main_mae=0.1380
+2026-07-01 19:57:35
+test_p_alt_mae=0.1814
+2026-07-01 19:57:35
+test_mean_mae=0.1597
+2026-07-01 19:57:35
+test_p_main_brier=0.0690
+2026-07-01 19:57:35
+test_p_alt_brier=0.0908
+2026-07-01 19:57:35
+test_mean_brier=0.0799
+2026-07-01 19:57:35
+test_p_main_auc=0.9670
+2026-07-01 19:57:35
+test_p_alt_auc=0.9088
+2026-07-01 19:57:35
+test_mean_auc=0.9379
+2026-07-01 19:57:35
+test_event_main_accuracy_strict=0.7381
+2026-07-01 19:57:35
+test_event_main_accuracy_tie_aware=0.9285
+2026-07-01 19:57:35
+test_event_main_top2_accuracy_tie_aware=0.9660
+2026-07-01 19:57:35
+test_event_main_top3_accuracy_tie_aware=0.9819
+2026-07-01 19:57:35
+test_event_main_tie_fraction=0.3566
+2026-07-01 19:57:35
+test_event_main_strict_miss_tie_correct_fraction=0.1904
+2026-07-01 19:57:35
+test_event_main_mean_true_gap_at_pred=0.0671
+2026-07-01 19:57:35
+test_event_main_median_true_gap_at_pred=0.0000
+2026-07-01 19:57:35
+test_event_main_median_true_margin=0.0000
+2026-07-01 19:57:35
+test_event_main_median_pred_margin=0.1779
+2026-07-01 19:57:35
+test_event_p_main_mae=0.0961
+2026-07-01 19:57:35
+test_event_p_main_mse=0.0477
+2026-07-01 19:57:35
+test_event_p_main_rmse=0.1199
+2026-07-01 19:57:35
+test_event_p_main_kl=0.1949
+2026-07-01 19:57:35
+test_event_p_main_sum_error_mean=0.0004
+2026-07-01 19:57:35
+test_event_p_main_sum_error_mae=0.1978
+2026-07-01 19:57:35
+test_event_true_p_main_sum_mean=1.5254
+2026-07-01 19:57:35
+test_event_pred_p_main_sum_mean=1.5259
+2026-07-01 19:57:35
+best_val_metric=0.9286
+2026-07-01 19:57:35
+best_val_metric_name=event_main_accuracy_tie_aware
+2026-07-01 19:57:35
+best_epoch=160
+
+07/07/2026
+The optuna sweep I tried to run over the weekend did not work, seemed to get stuck after one run. I’m wondering if thats cause my weights and biases trial expired over the weekend, although that doesn’t really make sense. Otherwise its probably optuna. Gonna try running it again just to see what happens though cus idk what else coulda caused that. 
+https://wandb.ai/senadeep5-clemson-university/xenon-graph-pooling-optuna 
+
+
+
+

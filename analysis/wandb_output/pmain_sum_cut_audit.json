@@ -1,0 +1,28 @@
+{
+  "clusters_removed_only_pmain_sum_after_fiducial": 4141169,
+  "clusters_retained_after_both_cuts": 2697720,
+  "event_pmain_sum_max_after_fiducial": 17.022222220897675,
+  "event_pmain_sum_quantiles": {
+    "0.0": 0.0,
+    "0.5": 1.0,
+    "0.9": 3.0,
+    "0.95": 3.018495750054696,
+    "0.99": 5.0,
+    "0.999": 7.0,
+    "1.0": 17.022222220897675
+  },
+  "events_removed_by_both_cuts": 258296,
+  "events_removed_fiducial": 659782,
+  "events_removed_only_pmain_sum_after_fiducial": 784766,
+  "events_removed_pmain_sum_raw": 1043062,
+  "events_retained_after_both_cuts": 1260059,
+  "events_retained_after_fiducial": 2044825,
+  "fraction_events_removed_by_both_cuts_pct": 53.41064339477048,
+  "fraction_events_removed_only_pmain_sum_after_fiducial_pct": 38.37814971941364,
+  "n_clusters_raw": 10259121,
+  "n_events_raw": 2704607,
+  "pmain_sum_threshold": 1.000001,
+  "pmain_sum_tolerance": 1e-06,
+  "source": "/Users/adeepsen/xenon_deepset_nn/data/s2_tag_training_clusters.npy",
+  "top13_ns": 192600.0
+}
