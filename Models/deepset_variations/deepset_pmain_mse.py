@@ -5,7 +5,7 @@ architecture.  It intentionally differs from the legacy runs:
 
 * target: p_main only (one output per cluster)
 * loss/model selection: per-cluster MSE / validation p_main MSE
-* data: top-13-cm fiducial cut plus event sum(p_main) <= 1 + tolerance
+* data: top-13-cm fiducial cut plus individual p_main clipping to [0, 1]
 * final reporting: a single held-out test R² and predicted-vs-true plot
 
 The test loader is never used during training or checkpoint selection.
@@ -47,7 +47,7 @@ RAW_DATA_PATH = Path(os.environ.get(
 OUTPUT_DIR = Path(os.environ.get(
     "XENON_PMAIN_MSE_OUTPUT_DIR", Path(__file__).resolve().parent / "pmain_mse_output"
 ))
-CACHE_FILE = OUTPUT_DIR / "pmain_mse_sumcut_processed_data.npz"
+CACHE_FILE = OUTPUT_DIR / "pmain_mse_individual_clip_processed_data.npz"
 CHECKPOINT_PATH = OUTPUT_DIR / "best_pmain_mse_model.pt"
 RESULTS_PATH = OUTPUT_DIR / "test_pmain_mse_results.json"
 PLOT_PATH = OUTPUT_DIR / "test_pmain_predicted_vs_true.png"
@@ -61,7 +61,6 @@ FEATURES = ["x", "y", "n_electrons_interface", "drift_time_mean", "drift_time_sp
 TARGET = "p_main"
 EVENT_COL = "event_number"
 TOP13_NS = 192_600.0
-PMAIN_SUM_TOLERANCE = 1e-6
 RANDOM_SEED = 42
 
 # Best completed Optuna architecture (trial_0004), now used with pure MSE.
@@ -108,7 +107,7 @@ def _cache_metadata() -> Dict[str, Any]:
         "target": TARGET,
         "event_col": EVENT_COL,
         "top13_ns": TOP13_NS,
-        "pmain_sum_tolerance": PMAIN_SUM_TOLERANCE,
+        "individual_pmain_clip": [0.0, 1.0],
         "random_seed": RANDOM_SEED,
     }
 
@@ -147,23 +146,23 @@ def prepare_data() -> Tuple[Tuple[np.ndarray, ...], Dict[str, Any]]:
     fiducial_removed_ids = event_min_drift[event_min_drift < TOP13_NS].index
     df = df[~df[EVENT_COL].isin(fiducial_removed_ids)].copy()
 
-    # New advisor-requested label-consistency cut.  This is intentionally an
-    # event-level operation and happens before the train/val/test split.
-    event_pmain_sum = df.groupby(EVENT_COL)[TARGET].sum()
-    pmain_sum_removed_ids = event_pmain_sum[
-        event_pmain_sum > 1.0 + PMAIN_SUM_TOLERANCE
-    ].index
-    df = df[~df[EVENT_COL].isin(pmain_sum_removed_ids)].copy()
+    # A sum(p_main) above one is valid for multi-scatter events: several
+    # clusters can contribute to the main S2.  Only individual out-of-range
+    # labels are a truth-plugin artifact, so clip them rather than remove their
+    # entire event.  Count these values for reporting/reproducibility.
+    pmain_above_one = int((df[TARGET] > 1.0).sum())
+    pmain_below_zero = int((df[TARGET] < 0.0).sum())
+    df[TARGET] = df[TARGET].clip(0.0, 1.0)
 
     cut_stats = {
         "events_raw": n_events_raw,
         "clusters_raw": n_clusters_raw,
         "events_removed_fiducial": int(len(fiducial_removed_ids)),
         "events_after_fiducial": int(n_events_raw - len(fiducial_removed_ids)),
-        "events_removed_pmain_sum_after_fiducial": int(len(pmain_sum_removed_ids)),
-        "clusters_after_both_cuts": int(len(df)),
-        "events_after_both_cuts": int(df[EVENT_COL].nunique()),
-        "pmain_sum_threshold": 1.0 + PMAIN_SUM_TOLERANCE,
+        "individual_pmain_values_clipped_above_one": pmain_above_one,
+        "individual_pmain_values_clipped_below_zero": pmain_below_zero,
+        "clusters_after_fiducial_and_individual_clip": int(len(df)),
+        "events_after_fiducial_and_individual_clip": int(df[EVENT_COL].nunique()),
     }
     print(json.dumps(cut_stats, indent=2))
 

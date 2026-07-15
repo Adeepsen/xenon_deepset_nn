@@ -18,3 +18,5 @@ Models/deepset_variations/graph_pooling_processed_data.npz
 Models/deepset_variations/baseline/graph_pooling_processed_data.npz
 Models/deepset_variations/optuna_sweep/graph_pooling_processed_data.npz
 Models/deepset_variations/pmain_mse_output/pmain_mse_sumcut_processed_data.npz
+Models/deepset_variations/pmain_mse_output/pmain_mse_individual_clip_processed_data.npz
+Models/deepset_variations/__pycache__/deepset_pmain_mse.cpython-312.pyc
