@@ -1,0 +1,18 @@
+{
+  "best_epoch": 298,
+  "best_val_p_main_mse": 0.03210797533392906,
+  "test_p_main_mse": 0.03251458704471588,
+  "test_p_main_mae": 0.06418997049331665,
+  "test_p_main_r2": 0.8688950538635254,
+  "test_loss": 0.03250751725926593,
+  "checkpoint": "/home/adeeps/projects/xenon_deepset_nn/Models/deepset_variations/pmain_mse_output/best_pmain_mse_model.pt",
+  "predicted_vs_true_plot": "/home/adeeps/projects/xenon_deepset_nn/Models/deepset_variations/pmain_mse_output/test_pmain_predicted_vs_true.png",
+  "events_raw": 2704607,
+  "clusters_raw": 10259121,
+  "events_removed_fiducial": 659782,
+  "events_after_fiducial": 2044825,
+  "events_removed_pmain_sum_after_fiducial": 784766,
+  "clusters_after_both_cuts": 2697720,
+  "events_after_both_cuts": 1260059,
+  "pmain_sum_threshold": 1.000001
+}

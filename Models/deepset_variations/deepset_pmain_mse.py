@@ -71,7 +71,7 @@ HEAD_HIDDEN = 512
 ENCODER_DEPTH = 5
 HEAD_DEPTH = 4
 DROPOUT = 0.04848861422838413
-LEARNING_RATE = 0.0016820065354419135
+LEARNING_RATE = 3e-4
 WEIGHT_DECAY = 1.076825417908119e-5
 BATCH_SIZE = 1024
 
@@ -272,6 +272,7 @@ def run_epoch(
             loss = mse_from_logits(logits, batch.y)
             if training:
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 optimizer.step()
             total_loss += float(loss.item())
             batches += 1
