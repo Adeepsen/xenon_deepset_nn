@@ -1,0 +1,28 @@
+{
+  "checkpoint": "/Users/adeepsen/xenon_deepset_nn/Models/deepset_variations/pmain_mse_output/best_pmain_mse_model.pt",
+  "evaluation_label": "model",
+  "evaluated_test_metrics": {
+    "n_clusters": 1027230,
+    "mse": 0.06601180881261826,
+    "mae": 0.1288321614265442,
+    "r2": 0.7306203842163086
+  },
+  "electron_argmax_baseline_metrics": {
+    "n_clusters": 1027230,
+    "mse": 0.22927717864513397,
+    "mae": 0.2322438508272171,
+    "r2": 0.06437039375305176
+  },
+  "n_test_events": 306724,
+  "cut_stats": {
+    "events_raw": 2704607,
+    "clusters_raw": 10259121,
+    "events_removed_fiducial": 659782,
+    "events_after_fiducial": 2044825,
+    "individual_pmain_values_clipped_above_one": 0,
+    "individual_pmain_values_clipped_below_zero": 0,
+    "clusters_after_fiducial_and_individual_clip": 6838889,
+    "events_after_fiducial_and_individual_clip": 2044825
+  },
+  "note": "The electron-argmax baseline predicts one main cluster per event; valid multi-scatter targets can have multiple high p_main clusters."
+}

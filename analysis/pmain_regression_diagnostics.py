@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 from torch_geometric.loader import DataLoader as PyGDataLoader
 
 
@@ -43,7 +44,8 @@ def metrics(target: np.ndarray, prediction: np.ndarray) -> dict[str, float | Non
         "n_clusters": int(len(target)),
         "mse": float(mean_squared_error(target, prediction)),
         "mae": float(mean_absolute_error(target, prediction)),
-        "r2": float(r2_score(target, prediction)) if variance > 0 else None,
+        # R² has no useful interpretation in a nearly constant target slice.
+        "r2": float(r2_score(target, prediction)) if variance > 1e-8 else None,
     }
 
 
@@ -104,17 +106,40 @@ def multiplicity_per_cluster(test_groups: list[np.ndarray], n_clusters: int) -> 
     return values
 
 
+def raw_test_features(module: Any, cached_event_ids: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Rebuild raw-scale features for the exact cached test-event split."""
+    data = np.load(module.RAW_DATA_PATH)
+    df = pd.DataFrame(data)
+    min_drift = df.groupby(module.EVENT_COL)["drift_time_mean"].min()
+    df = df[~df[module.EVENT_COL].isin(min_drift[min_drift < module.TOP13_NS].index)].copy()
+    df[module.TARGET] = df[module.TARGET].clip(0.0, 1.0)
+    event_ids = df[module.EVENT_COL].unique()
+    _, temporary_events = train_test_split(
+        event_ids, test_size=0.30, random_state=module.RANDOM_SEED, shuffle=True
+    )
+    _, test_events = train_test_split(
+        temporary_events, test_size=0.50, random_state=module.RANDOM_SEED, shuffle=True
+    )
+    test_df = df[df[module.EVENT_COL].isin(test_events)]
+    if not np.array_equal(test_df[module.EVENT_COL].to_numpy(), cached_event_ids):
+        raise RuntimeError("Raw test-feature reconstruction does not match the cached test split.")
+    return (
+        test_df["n_electrons_interface"].to_numpy(dtype=np.float32),
+        test_df["drift_time_mean"].to_numpy(dtype=np.float32),
+    )
+
+
 def residual_plot(electrons: np.ndarray, drift_ns: np.ndarray, residual: np.ndarray, output: Path) -> None:
     rng = np.random.default_rng(42)
     sample = rng.choice(len(residual), size=min(SAMPLE_SIZE, len(residual)), replace=False)
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True)
     axes[0].hexbin(electrons[sample], residual[sample], gridsize=75, mincnt=1, bins="log", cmap="viridis")
     axes[0].axhline(0, color="white", linewidth=0.8)
-    axes[0].set(xlabel="Standardized electron-count feature", ylabel="Residual (prediction − true)",
+    axes[0].set(xlabel="n_electrons_interface", ylabel="Residual (prediction − true)",
                 title="Residual vs electron count")
     axes[1].hexbin(drift_ns[sample] / 1e3, residual[sample], gridsize=75, mincnt=1, bins="log", cmap="viridis")
     axes[1].axhline(0, color="white", linewidth=0.8)
-    axes[1].set(xlabel="Standardized drift-time feature / 10³", title="Residual vs drift time")
+    axes[1].set(xlabel="drift_time_mean (μs)", title="Residual vs drift time")
     fig.tight_layout()
     fig.savefig(output, dpi=220)
     plt.close(fig)
@@ -131,7 +156,7 @@ def main() -> None:
 
     module = load_training_module()
     arrays, cut_stats = module.prepare_data()
-    _, _, _, _, _, _, _, _, x_test, y_test, _, test_groups = arrays
+    _, _, _, _, _, _, _, _, x_test, y_test, e_test, test_groups = arrays
     target = y_test[:, 0]
     baseline = electron_argmax_predictions(x_test, test_groups)
     multiplicity = multiplicity_per_cluster(test_groups, len(target))
@@ -160,7 +185,8 @@ def main() -> None:
     multiplicity_metrics = grouped_metrics(target, prediction, multiplicity, multiplicity_definitions)
     target_metrics.to_csv(args.output_dir / f"{evaluation_label}_metrics_by_true_pmain_bin.csv", index=False)
     multiplicity_metrics.to_csv(args.output_dir / f"{evaluation_label}_metrics_by_event_multiplicity.csv", index=False)
-    residual_plot(x_test[:, 2], x_test[:, 3], prediction - target,
+    raw_electrons, raw_drift_ns = raw_test_features(module, e_test)
+    residual_plot(raw_electrons, raw_drift_ns, prediction - target,
                   args.output_dir / f"{evaluation_label}_residuals_vs_electron_count_and_drift_time.png")
 
     summary = {
