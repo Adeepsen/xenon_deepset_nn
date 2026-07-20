@@ -1,0 +1,245 @@
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/adeeps/.netrc.
+wandb: Currently logged in as: senadeep5 (senadeep5-clemson-university) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run uvgle01t
+wandb: Tracking run with wandb version 0.27.2
+wandb: Run data is saved locally in /home/adeeps/projects/xenon_deepset_nn/Models/feature_engineering/wandb/run-20260716_112527-uvgle01t
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run event_multiplicity-seed42
+wandb: ⭐️ View project at https://wandb.ai/senadeep5-clemson-university/xenon-graph-pooling-pmain-feature-sweep
+wandb: 🚀 View run at https://wandb.ai/senadeep5-clemson-university/xenon-graph-pooling-pmain-feature-sweep/runs/uvgle01t
+event_multiplicity seed=42 epoch=001 train=0.147074 val=0.138089 r2=0.43625 best=0.138089
+event_multiplicity seed=42 epoch=002 train=0.119545 val=0.101527 r2=0.58551 best=0.101527
+event_multiplicity seed=42 epoch=003 train=0.103140 val=0.094565 r2=0.61394 best=0.094565
+event_multiplicity seed=42 epoch=004 train=0.097952 val=0.089814 r2=0.63333 best=0.089814
+event_multiplicity seed=42 epoch=005 train=0.095068 val=0.088163 r2=0.64007 best=0.088163
+event_multiplicity seed=42 epoch=006 train=0.093068 val=0.086739 r2=0.64589 best=0.086739
+event_multiplicity seed=42 epoch=007 train=0.091535 val=0.084991 r2=0.65302 best=0.084991
+event_multiplicity seed=42 epoch=008 train=0.090247 val=0.083963 r2=0.65722 best=0.083963
+event_multiplicity seed=42 epoch=009 train=0.089212 val=0.083720 r2=0.65821 best=0.083720
+event_multiplicity seed=42 epoch=010 train=0.088303 val=0.083396 r2=0.65953 best=0.083396
+event_multiplicity seed=42 epoch=011 train=0.087412 val=0.082423 r2=0.66351 best=0.082423
+event_multiplicity seed=42 epoch=012 train=0.086860 val=0.081719 r2=0.66638 best=0.081719
+event_multiplicity seed=42 epoch=013 train=0.086266 val=0.081310 r2=0.66805 best=0.081310
+event_multiplicity seed=42 epoch=014 train=0.085765 val=0.080907 r2=0.66970 best=0.080907
+event_multiplicity seed=42 epoch=015 train=0.085427 val=0.081232 r2=0.66837 best=0.080907
+event_multiplicity seed=42 epoch=016 train=0.085036 val=0.079586 r2=0.67509 best=0.079586
+event_multiplicity seed=42 epoch=017 train=0.084685 val=0.079984 r2=0.67347 best=0.079586
+event_multiplicity seed=42 epoch=018 train=0.084168 val=0.079622 r2=0.67494 best=0.079586
+event_multiplicity seed=42 epoch=019 train=0.083857 val=0.079002 r2=0.67747 best=0.079002
+event_multiplicity seed=42 epoch=020 train=0.083428 val=0.078924 r2=0.67779 best=0.078924
+event_multiplicity seed=42 epoch=021 train=0.083042 val=0.077950 r2=0.68177 best=0.077950
+event_multiplicity seed=42 epoch=022 train=0.082821 val=0.078372 r2=0.68005 best=0.077950
+event_multiplicity seed=42 epoch=023 train=0.082435 val=0.078046 r2=0.68138 best=0.077950
+event_multiplicity seed=42 epoch=024 train=0.082184 val=0.077691 r2=0.68283 best=0.077691
+event_multiplicity seed=42 epoch=025 train=0.081960 val=0.077227 r2=0.68472 best=0.077227
+event_multiplicity seed=42 epoch=026 train=0.081632 val=0.077540 r2=0.68344 best=0.077227
+event_multiplicity seed=42 epoch=027 train=0.081462 val=0.077769 r2=0.68251 best=0.077227
+event_multiplicity seed=42 epoch=028 train=0.081296 val=0.077347 r2=0.68423 best=0.077227
+event_multiplicity seed=42 epoch=029 train=0.081100 val=0.076752 r2=0.68666 best=0.076752
+event_multiplicity seed=42 epoch=030 train=0.081017 val=0.077260 r2=0.68459 best=0.076752
+event_multiplicity seed=42 epoch=031 train=0.080792 val=0.077185 r2=0.68489 best=0.076752
+event_multiplicity seed=42 epoch=032 train=0.080679 val=0.076826 r2=0.68636 best=0.076752
+event_multiplicity seed=42 epoch=033 train=0.080479 val=0.076444 r2=0.68792 best=0.076444
+event_multiplicity seed=42 epoch=034 train=0.080455 val=0.076508 r2=0.68766 best=0.076444
+event_multiplicity seed=42 epoch=035 train=0.080385 val=0.076122 r2=0.68923 best=0.076122
+event_multiplicity seed=42 epoch=036 train=0.080177 val=0.076763 r2=0.68662 best=0.076122
+event_multiplicity seed=42 epoch=037 train=0.079913 val=0.074268 r2=0.69680 best=0.074268
+event_multiplicity seed=42 epoch=038 train=0.076208 val=0.070293 r2=0.71303 best=0.070293
+event_multiplicity seed=42 epoch=039 train=0.074575 val=0.069944 r2=0.71445 best=0.069944
+event_multiplicity seed=42 epoch=040 train=0.073896 val=0.069041 r2=0.71814 best=0.069041
+event_multiplicity seed=42 epoch=041 train=0.073299 val=0.068778 r2=0.71921 best=0.068778
+event_multiplicity seed=42 epoch=042 train=0.072765 val=0.068474 r2=0.72046 best=0.068474
+event_multiplicity seed=42 epoch=043 train=0.072448 val=0.068201 r2=0.72157 best=0.068201
+event_multiplicity seed=42 epoch=044 train=0.072173 val=0.067862 r2=0.72296 best=0.067862
+event_multiplicity seed=42 epoch=045 train=0.071876 val=0.067753 r2=0.72340 best=0.067753
+event_multiplicity seed=42 epoch=046 train=0.071572 val=0.068305 r2=0.72115 best=0.067753
+event_multiplicity seed=42 epoch=047 train=0.071492 val=0.067570 r2=0.72415 best=0.067570
+event_multiplicity seed=42 epoch=048 train=0.071303 val=0.067234 r2=0.72552 best=0.067234
+event_multiplicity seed=42 epoch=049 train=0.071175 val=0.067225 r2=0.72555 best=0.067225
+event_multiplicity seed=42 epoch=050 train=0.071021 val=0.067343 r2=0.72507 best=0.067225
+event_multiplicity seed=42 epoch=051 train=0.070906 val=0.067288 r2=0.72530 best=0.067225
+event_multiplicity seed=42 epoch=052 train=0.070666 val=0.067586 r2=0.72408 best=0.067225
+event_multiplicity seed=42 epoch=053 train=0.070538 val=0.067274 r2=0.72535 best=0.067225
+event_multiplicity seed=42 epoch=054 train=0.070428 val=0.066798 r2=0.72730 best=0.066798
+event_multiplicity seed=42 epoch=055 train=0.070349 val=0.066394 r2=0.72895 best=0.066394
+event_multiplicity seed=42 epoch=056 train=0.070174 val=0.066908 r2=0.72685 best=0.066394
+event_multiplicity seed=42 epoch=057 train=0.070077 val=0.067150 r2=0.72586 best=0.066394
+event_multiplicity seed=42 epoch=058 train=0.069967 val=0.066855 r2=0.72706 best=0.066394
+event_multiplicity seed=42 epoch=059 train=0.069852 val=0.066925 r2=0.72678 best=0.066394
+event_multiplicity seed=42 epoch=060 train=0.069741 val=0.066441 r2=0.72875 best=0.066394
+event_multiplicity seed=42 epoch=061 train=0.069705 val=0.066599 r2=0.72811 best=0.066394
+event_multiplicity seed=42 epoch=062 train=0.069530 val=0.066602 r2=0.72810 best=0.066394
+event_multiplicity seed=42 epoch=063 train=0.069428 val=0.066958 r2=0.72665 best=0.066394
+event_multiplicity seed=42 epoch=064 train=0.069353 val=0.066607 r2=0.72808 best=0.066394
+event_multiplicity seed=42 epoch=065 train=0.069304 val=0.066323 r2=0.72924 best=0.066323
+event_multiplicity seed=42 epoch=066 train=0.069155 val=0.066405 r2=0.72890 best=0.066323
+event_multiplicity seed=42 epoch=067 train=0.069180 val=0.066256 r2=0.72951 best=0.066256
+event_multiplicity seed=42 epoch=068 train=0.069042 val=0.067006 r2=0.72645 best=0.066256
+event_multiplicity seed=42 epoch=069 train=0.068940 val=0.066115 r2=0.73009 best=0.066115
+event_multiplicity seed=42 epoch=070 train=0.068892 val=0.066379 r2=0.72901 best=0.066115
+event_multiplicity seed=42 epoch=071 train=0.068747 val=0.066190 r2=0.72978 best=0.066115
+event_multiplicity seed=42 epoch=072 train=0.068756 val=0.065871 r2=0.73108 best=0.065871
+event_multiplicity seed=42 epoch=073 train=0.068619 val=0.066127 r2=0.73004 best=0.065871
+event_multiplicity seed=42 epoch=074 train=0.068556 val=0.065957 r2=0.73073 best=0.065871
+event_multiplicity seed=42 epoch=075 train=0.068471 val=0.066065 r2=0.73029 best=0.065871
+event_multiplicity seed=42 epoch=076 train=0.068395 val=0.065962 r2=0.73071 best=0.065871
+event_multiplicity seed=42 epoch=077 train=0.068318 val=0.066103 r2=0.73013 best=0.065871
+event_multiplicity seed=42 epoch=078 train=0.068286 val=0.066177 r2=0.72983 best=0.065871
+event_multiplicity seed=42 epoch=079 train=0.068149 val=0.066250 r2=0.72954 best=0.065871
+event_multiplicity seed=42 epoch=080 train=0.068107 val=0.067227 r2=0.72555 best=0.065871
+event_multiplicity seed=42 epoch=081 train=0.068016 val=0.065896 r2=0.73098 best=0.065871
+event_multiplicity seed=42 epoch=082 train=0.067897 val=0.066068 r2=0.73028 best=0.065871
+event_multiplicity seed=42 epoch=083 train=0.067889 val=0.065897 r2=0.73098 best=0.065871
+event_multiplicity seed=42 epoch=084 train=0.067753 val=0.065840 r2=0.73121 best=0.065840
+event_multiplicity seed=42 epoch=085 train=0.067717 val=0.066267 r2=0.72946 best=0.065840
+event_multiplicity seed=42 epoch=086 train=0.067643 val=0.066219 r2=0.72966 best=0.065840
+event_multiplicity seed=42 epoch=087 train=0.067627 val=0.066108 r2=0.73011 best=0.065840
+event_multiplicity seed=42 epoch=088 train=0.067513 val=0.066391 r2=0.72896 best=0.065840
+event_multiplicity seed=42 epoch=089 train=0.067461 val=0.066151 r2=0.72994 best=0.065840
+event_multiplicity seed=42 epoch=090 train=0.067413 val=0.065855 r2=0.73115 best=0.065840
+event_multiplicity seed=42 epoch=091 train=0.067412 val=0.066580 r2=0.72819 best=0.065840
+event_multiplicity seed=42 epoch=092 train=0.067343 val=0.066583 r2=0.72817 best=0.065840
+event_multiplicity seed=42 epoch=093 train=0.067162 val=0.065881 r2=0.73104 best=0.065840
+event_multiplicity seed=42 epoch=094 train=0.067184 val=0.065868 r2=0.73109 best=0.065840
+event_multiplicity seed=42 epoch=095 train=0.067149 val=0.065447 r2=0.73281 best=0.065447
+event_multiplicity seed=42 epoch=096 train=0.066993 val=0.065769 r2=0.73150 best=0.065447
+event_multiplicity seed=42 epoch=097 train=0.067042 val=0.065732 r2=0.73165 best=0.065447
+event_multiplicity seed=42 epoch=098 train=0.067015 val=0.066454 r2=0.72870 best=0.065447
+event_multiplicity seed=42 epoch=099 train=0.066820 val=0.065806 r2=0.73135 best=0.065447
+event_multiplicity seed=42 epoch=100 train=0.066821 val=0.066214 r2=0.72968 best=0.065447
+event_multiplicity seed=42 epoch=101 train=0.066812 val=0.065984 r2=0.73062 best=0.065447
+event_multiplicity seed=42 epoch=102 train=0.066718 val=0.066283 r2=0.72940 best=0.065447
+event_multiplicity seed=42 epoch=103 train=0.066712 val=0.065936 r2=0.73082 best=0.065447
+event_multiplicity seed=42 epoch=104 train=0.066532 val=0.065921 r2=0.73088 best=0.065447
+event_multiplicity seed=42 epoch=105 train=0.066533 val=0.066036 r2=0.73041 best=0.065447
+event_multiplicity seed=42 epoch=106 train=0.066554 val=0.066134 r2=0.73001 best=0.065447
+event_multiplicity seed=42 epoch=107 train=0.066465 val=0.066104 r2=0.73013 best=0.065447
+event_multiplicity seed=42 epoch=108 train=0.066365 val=0.066262 r2=0.72949 best=0.065447
+event_multiplicity seed=42 epoch=109 train=0.066380 val=0.066918 r2=0.72681 best=0.065447
+event_multiplicity seed=42 epoch=110 train=0.066320 val=0.065777 r2=0.73147 best=0.065447
+event_multiplicity seed=42 epoch=111 train=0.066199 val=0.066383 r2=0.72899 best=0.065447
+event_multiplicity seed=42 epoch=112 train=0.066181 val=0.066213 r2=0.72968 best=0.065447
+event_multiplicity seed=42 epoch=113 train=0.064844 val=0.065741 r2=0.73161 best=0.065447
+event_multiplicity seed=42 epoch=114 train=0.064722 val=0.065293 r2=0.73344 best=0.065293
+event_multiplicity seed=42 epoch=115 train=0.064635 val=0.065105 r2=0.73421 best=0.065105
+event_multiplicity seed=42 epoch=116 train=0.064512 val=0.065499 r2=0.73260 best=0.065105
+event_multiplicity seed=42 epoch=117 train=0.064461 val=0.065560 r2=0.73235 best=0.065105
+event_multiplicity seed=42 epoch=118 train=0.064404 val=0.065059 r2=0.73439 best=0.065059
+event_multiplicity seed=42 epoch=119 train=0.064257 val=0.065661 r2=0.73194 best=0.065059
+event_multiplicity seed=42 epoch=120 train=0.064243 val=0.065586 r2=0.73225 best=0.065059
+event_multiplicity seed=42 epoch=121 train=0.064245 val=0.065341 r2=0.73325 best=0.065059
+event_multiplicity seed=42 epoch=122 train=0.064142 val=0.065334 r2=0.73327 best=0.065059
+event_multiplicity seed=42 epoch=123 train=0.064066 val=0.065402 r2=0.73300 best=0.065059
+event_multiplicity seed=42 epoch=124 train=0.064079 val=0.065754 r2=0.73156 best=0.065059
+event_multiplicity seed=42 epoch=125 train=0.063991 val=0.066013 r2=0.73050 best=0.065059
+event_multiplicity seed=42 epoch=126 train=0.064010 val=0.065767 r2=0.73151 best=0.065059
+event_multiplicity seed=42 epoch=127 train=0.063910 val=0.065630 r2=0.73207 best=0.065059
+event_multiplicity seed=42 epoch=128 train=0.063950 val=0.066138 r2=0.72999 best=0.065059
+event_multiplicity seed=42 epoch=129 train=0.063795 val=0.066079 r2=0.73023 best=0.065059
+event_multiplicity seed=42 epoch=130 train=0.063820 val=0.065517 r2=0.73253 best=0.065059
+event_multiplicity seed=42 epoch=131 train=0.063717 val=0.065919 r2=0.73089 best=0.065059
+event_multiplicity seed=42 epoch=132 train=0.063761 val=0.066005 r2=0.73053 best=0.065059
+event_multiplicity seed=42 epoch=133 train=0.063681 val=0.065609 r2=0.73215 best=0.065059
+event_multiplicity seed=42 epoch=134 train=0.063664 val=0.065781 r2=0.73145 best=0.065059
+event_multiplicity seed=42 epoch=135 train=0.063570 val=0.066017 r2=0.73048 best=0.065059
+event_multiplicity seed=42 epoch=136 train=0.062540 val=0.065625 r2=0.73209 best=0.065059
+event_multiplicity seed=42 epoch=137 train=0.062350 val=0.065350 r2=0.73321 best=0.065059
+event_multiplicity seed=42 epoch=138 train=0.062307 val=0.065845 r2=0.73119 best=0.065059
+event_multiplicity seed=42 epoch=139 train=0.062267 val=0.065484 r2=0.73266 best=0.065059
+event_multiplicity seed=42 epoch=140 train=0.062204 val=0.065885 r2=0.73102 best=0.065059
+event_multiplicity seed=42 epoch=141 train=0.062098 val=0.065556 r2=0.73237 best=0.065059
+event_multiplicity seed=42 epoch=142 train=0.062014 val=0.065548 r2=0.73240 best=0.065059
+event_multiplicity seed=42 epoch=143 train=0.062026 val=0.065882 r2=0.73104 best=0.065059
+event_multiplicity seed=42 epoch=144 train=0.062049 val=0.065838 r2=0.73121 best=0.065059
+event_multiplicity seed=42 epoch=145 train=0.061951 val=0.065605 r2=0.73217 best=0.065059
+event_multiplicity seed=42 epoch=146 train=0.061862 val=0.065783 r2=0.73144 best=0.065059
+event_multiplicity seed=42 epoch=147 train=0.061861 val=0.065813 r2=0.73132 best=0.065059
+event_multiplicity seed=42 epoch=148 train=0.061862 val=0.065859 r2=0.73113 best=0.065059
+event_multiplicity seed=42 epoch=149 train=0.061733 val=0.066172 r2=0.72985 best=0.065059
+event_multiplicity seed=42 epoch=150 train=0.061766 val=0.065843 r2=0.73120 best=0.065059
+event_multiplicity seed=42 epoch=151 train=0.061707 val=0.065965 r2=0.73070 best=0.065059
+event_multiplicity seed=42 epoch=152 train=0.061644 val=0.066376 r2=0.72902 best=0.065059
+event_multiplicity seed=42 epoch=153 train=0.060804 val=0.065425 r2=0.73290 best=0.065059
+event_multiplicity seed=42 epoch=154 train=0.060776 val=0.065552 r2=0.73239 best=0.065059
+event_multiplicity seed=42 epoch=155 train=0.060710 val=0.065872 r2=0.73108 best=0.065059
+event_multiplicity seed=42 epoch=156 train=0.060627 val=0.065859 r2=0.73113 best=0.065059
+event_multiplicity seed=42 epoch=157 train=0.060604 val=0.065931 r2=0.73084 best=0.065059
+event_multiplicity seed=42 epoch=158 train=0.060565 val=0.065878 r2=0.73105 best=0.065059
+event_multiplicity seed=42 epoch=159 train=0.060501 val=0.065968 r2=0.73069 best=0.065059
+event_multiplicity seed=42 epoch=160 train=0.060510 val=0.065782 r2=0.73144 best=0.065059
+event_multiplicity seed=42 epoch=161 train=0.060496 val=0.066032 r2=0.73042 best=0.065059
+event_multiplicity seed=42 epoch=162 train=0.060432 val=0.066113 r2=0.73009 best=0.065059
+event_multiplicity seed=42 epoch=163 train=0.060342 val=0.066260 r2=0.72949 best=0.065059
+event_multiplicity seed=42 epoch=164 train=0.060334 val=0.066113 r2=0.73009 best=0.065059
+event_multiplicity seed=42 epoch=165 train=0.060352 val=0.066133 r2=0.73001 best=0.065059
+event_multiplicity seed=42 epoch=166 train=0.060270 val=0.065937 r2=0.73081 best=0.065059
+event_multiplicity seed=42 epoch=167 train=0.060244 val=0.066086 r2=0.73020 best=0.065059
+event_multiplicity seed=42 epoch=168 train=0.060212 val=0.066069 r2=0.73027 best=0.065059
+event_multiplicity seed=42 epoch=169 train=0.060224 val=0.066317 r2=0.72926 best=0.065059
+event_multiplicity seed=42 epoch=170 train=0.059588 val=0.066195 r2=0.72976 best=0.065059
+event_multiplicity seed=42 epoch=171 train=0.059542 val=0.066061 r2=0.73031 best=0.065059
+event_multiplicity seed=42 epoch=172 train=0.059454 val=0.066137 r2=0.72999 best=0.065059
+event_multiplicity seed=42 epoch=173 train=0.059455 val=0.065873 r2=0.73107 best=0.065059
+event_multiplicity seed=42 epoch=174 train=0.059438 val=0.066227 r2=0.72963 best=0.065059
+event_multiplicity seed=42 epoch=175 train=0.059374 val=0.066272 r2=0.72945 best=0.065059
+event_multiplicity seed=42 epoch=176 train=0.059317 val=0.065976 r2=0.73065 best=0.065059
+event_multiplicity seed=42 epoch=177 train=0.059366 val=0.066002 r2=0.73055 best=0.065059
+wandb: updating run metadata
+wandb: uploading history steps 177-178, summary, console lines 177-202
+wandb: 
+wandb: Run history:
+wandb:                                 best_epoch ▁
+wandb:                        best_val_p_main_mse █▄▄▃▃▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                    clusters_after_fiducial ▁
+wandb:                               clusters_raw ▁
+wandb:                                      epoch ▁▁▁▂▂▂▂▂▂▂▃▃▃▄▄▄▄▄▄▅▅▅▅▅▅▅▆▆▆▆▆▆▇▇▇▇▇███
+wandb:                      events_after_fiducial ▁
+wandb:                                 events_raw ▁
+wandb:                    events_removed_fiducial ▁
+wandb:  individual_pmain_values_clipped_above_one ▁
+wandb: individual_pmain_values_clipped_below_zero ▁
+wandb:                                         +6 ...
+wandb: 
+wandb: Run summary:
+wandb:                 best_epoch 118
+wandb:        best_val_p_main_mse 0.06506
+wandb: best_validation_checkpoint /home/adeeps/project...
+wandb:    clusters_after_fiducial 6838889
+wandb:               clusters_raw 10259121
+wandb:                      epoch 178
+wandb:                event_split 70% train / 15% vali...
+wandb:      events_after_fiducial 2044825
+wandb:                 events_raw 2704607
+wandb:    events_removed_fiducial 659782
+wandb:                        +12 ...
+wandb: 
+wandb: 🚀 View run event_multiplicity-seed42 at: https://wandb.ai/senadeep5-clemson-university/xenon-graph-pooling-pmain-feature-sweep/runs/uvgle01t
+wandb: ⭐️ View project at: https://wandb.ai/senadeep5-clemson-university/xenon-graph-pooling-pmain-feature-sweep
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260716_112527-uvgle01t/logs
+event_multiplicity seed=42 epoch=178 train=0.059313 val=0.066113 r2=0.73009 best=0.065059
+{
+  "feature_set": "event_multiplicity",
+  "features": [
+    "x",
+    "y",
+    "n_electrons_interface",
+    "drift_time_mean",
+    "drift_time_spread",
+    "event_log_cluster_count"
+  ],
+  "seed": 42,
+  "best_epoch": 118,
+  "best_val_p_main_mse": 0.06505949050188065,
+  "best_validation_checkpoint": "/home/adeeps/projects/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/event_multiplicity/seed_42/best_validation_model.pt",
+  "held_out_test_evaluated": false,
+  "events_raw": 2704607,
+  "clusters_raw": 10259121,
+  "events_removed_fiducial": 659782,
+  "events_after_fiducial": 2044825,
+  "clusters_after_fiducial": 6838889,
+  "individual_pmain_values_clipped_above_one": 0,
+  "individual_pmain_values_clipped_below_zero": 0,
+  "event_split": "70% train / 15% validation / 15% held-out test; event-level",
+  "held_out_test_used": false
+}
