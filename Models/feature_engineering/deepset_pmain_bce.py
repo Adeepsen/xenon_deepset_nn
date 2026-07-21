@@ -167,7 +167,16 @@ def main() -> None:
         if stale_epochs >= BCE_EARLY_STOPPING_PATIENCE:
             print(f"Early stopping at epoch {epoch}; best validation BCE was epoch {best_epoch}.")
             break
-
+    
+    torch.save(
+    {
+        "epoch": epoch,
+        "model_state_dict": model.state_dict(),
+        "features": features,
+        "seed": args.seed,
+        "cut_stats": cut_stats,
+    },
+    output_dir / "final_epoch_model.pt",
     summary = {
         "feature_set": args.feature_set, "features": features, "seed": args.seed, "best_epoch": best_epoch,
         "best_val_p_main_bce": best_val_bce, "best_validation_checkpoint": str(checkpoint_path),
@@ -175,6 +184,8 @@ def main() -> None:
     }
     summary_path.write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
+
+)
     if run:
         wandb.log(summary)
         wandb.finish()
