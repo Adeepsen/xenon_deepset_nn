@@ -1,0 +1,42 @@
+{
+  "split": "validation only; test events untouched",
+  "seed": 42,
+  "n_validation_clusters": 1028039,
+  "sampled_points_in_plot": 100000,
+  "metrics": {
+    "baseline": {
+      "mse": 0.065200574696064,
+      "mae": 0.1310422420501709,
+      "r2": 0.7338184118270874
+    },
+    "all_event_relative": {
+      "mse": 0.060734741389751434,
+      "mae": 0.12066809087991714,
+      "r2": 0.7520502209663391
+    }
+  },
+  "checkpoints": {
+    "baseline": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/baseline/seed_42/best_validation_model.pt",
+    "all_event_relative": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/all_event_relative/seed_42/best_validation_model.pt"
+  },
+  "additional_diagnostics": {
+    "fractional_scatter": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/prediction_plots/validation_fractional_true_vs_predicted_baseline_vs_all_event_relative_seed42.png",
+    "binned_calibration_plot": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/prediction_plots/validation_binned_calibration_baseline_vs_all_event_relative_seed42.png",
+    "binned_calibration_csv": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/prediction_plots/validation_binned_calibration_baseline_vs_all_event_relative_seed42.csv",
+    "target_regime_error_plot": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/prediction_plots/validation_error_by_target_regime_baseline_vs_all_event_relative_seed42.png",
+    "target_regime_error_csv": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/feature_sweep_output/prediction_plots/validation_error_by_target_regime_baseline_vs_all_event_relative_seed42.csv",
+    "train_vs_validation_metrics": {
+      "train": {
+        "mse": 0.0542009063065052,
+        "mae": 0.11365792900323868,
+        "r2": 0.77913498878479
+      },
+      "validation": {
+        "mse": 0.060734741389751434,
+        "mae": 0.12066809087991714,
+        "r2": 0.7520502209663391
+      }
+    },
+    "n_training_clusters_in_train_vs_validation": 100003
+  }
+}

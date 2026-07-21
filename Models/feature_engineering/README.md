@@ -43,3 +43,24 @@ best isolated family, the best targeted combination, and `all_event_relative`
 with seeds 7, 42, and 31415. W&B runs are logged to
 `xenon-graph-pooling-pmain-feature-sweep`; local validation-only outputs go to
 `Models/feature_engineering/feature_sweep_output/`.
+
+## Predicted vs. true plot
+
+After the baseline and comparison checkpoints are present locally, create a
+matched two-panel plot on the common validation events:
+
+```bash
+python Models/feature_engineering/plot_feature_sweep_predictions.py
+```
+
+This is intentionally labelled as a validation plot; it does not consume the
+held-out test set. The default comparison is `all_event_relative`.
+It also produces a fractional-target-only scatter, binned calibration plot,
+and endpoint-versus-fractional error table/plot.
+
+To compare the selected comparison model on the fitted training events versus
+the validation events, without touching test events, add:
+
+```bash
+python Models/feature_engineering/plot_feature_sweep_predictions.py --train-vs-validation
+```
