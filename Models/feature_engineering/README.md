@@ -64,3 +64,15 @@ the validation events, without touching test events, add:
 ```bash
 python Models/feature_engineering/plot_feature_sweep_predictions.py --train-vs-validation
 ```
+
+## Advisor BCE experiment
+
+The standalone BCE-with-logits experiment preserves the all-event-relative
+architecture and changes only the objective and scheduler prescription:
+
+```bash
+python Models/feature_engineering/deepset_pmain_bce.py --feature-set all_event_relative --seed 42
+```
+
+It selects checkpoints by validation BCE, logs validation MSE/MAE/R² alongside
+that loss, and does not evaluate test events during this comparison.
