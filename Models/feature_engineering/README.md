@@ -94,3 +94,11 @@ to each cluster:
 ```bash
 python Models/feature_engineering/deepset_pmain_sum_mean_max.py --seed 42
 ```
+
+The corresponding full-data capacity test uses the wider overfit-probe model
+with light regularization and logs fractional metrics on both train and
+validation events:
+
+```bash
+python Models/feature_engineering/deepset_pmain_wide_lowreg.py --seed 42
+```
