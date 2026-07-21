@@ -45,8 +45,9 @@ try:
 except ImportError:
     wandb = None
 
+BCE_EARLY_STOPPING_PATIENCE = 10_000
 
-MAX_EPOCHS = 300
+MAX_EPOCHS = 1000
 SCHEDULER_FACTOR = 0.7
 SCHEDULER_PATIENCE = 16
 SCHEDULER_THRESHOLD = 1e-3
@@ -163,7 +164,7 @@ def main() -> None:
             f"val_bce={val_bce:.6f} val_mse={val_metrics['p_main_mse']:.6f} "
             f"val_r2={val_metrics['p_main_r2']:.5f} best_bce={best_val_bce:.6f}"
         )
-        if stale_epochs >= EARLY_STOPPING_PATIENCE:
+        if stale_epochs >= BCE_EARLY_STOPPING_PATIENCE:
             print(f"Early stopping at epoch {epoch}; best validation BCE was epoch {best_epoch}.")
             break
 

@@ -77,6 +77,13 @@ python Models/feature_engineering/deepset_pmain_bce.py --feature-set all_event_r
 It selects checkpoints by validation BCE, logs validation MSE/MAE/R² alongside
 that loss, and does not evaluate test events during this comparison.
 
+Generate a training-versus-validation predicted-vs-true plot for its selected
+BCE checkpoint (with test events untouched):
+
+```bash
+python Models/feature_engineering/plot_bce_train_validation.py
+```
+
 ## Next diagnostics
 
 An intentional, fraction-enriched training overfit probe tests whether a wider,

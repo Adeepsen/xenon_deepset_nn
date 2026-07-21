@@ -1,0 +1,19 @@
+{
+  "split": "training event sample and full validation; test events untouched",
+  "checkpoint": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/bce_output/all_event_relative/seed_42/best_validation_bce_model.pt",
+  "seed": 42,
+  "n_training_clusters_in_plot": 100003,
+  "n_validation_clusters": 1028039,
+  "metrics": {
+    "train": {
+      "mse": 0.05643235892057419,
+      "mae": 0.11944898217916489,
+      "r2": 0.7700419425964355
+    },
+    "validation": {
+      "mse": 0.06105995923280716,
+      "mae": 0.12433774024248123,
+      "r2": 0.7507225275039673
+    }
+  }
+}
