@@ -76,3 +76,21 @@ python Models/feature_engineering/deepset_pmain_bce.py --feature-set all_event_r
 
 It selects checkpoints by validation BCE, logs validation MSE/MAE/R² alongside
 that loss, and does not evaluate test events during this comparison.
+
+## Next diagnostics
+
+An intentional, fraction-enriched training overfit probe tests whether a wider,
+unregularized model can fit the fractional labels at all. It is not a final
+model and never reads validation or test events:
+
+```bash
+python Models/feature_engineering/fractional_overfit_probe.py --max-events 20000
+```
+
+The sum/mean/max pooling ablation is a candidate model. It keeps MSE and the
+current all-event-relative inputs fixed, changing only the event context given
+to each cluster:
+
+```bash
+python Models/feature_engineering/deepset_pmain_sum_mean_max.py --seed 42
+```
