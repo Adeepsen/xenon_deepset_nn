@@ -1,0 +1,16 @@
+{
+  "best_epoch": 497,
+  "best_train_fractional_mse": 0.0015993615379557014,
+  "checkpoint": "/home/adeeps/projects/xenon_deepset_nn/Models/feature_engineering/overfit_probe_output/seed_42/lowest_train_fractional_mse.pt",
+  "n_selected_events": 20000,
+  "held_out_test_evaluated": false,
+  "events_raw": 2704607,
+  "clusters_raw": 10259121,
+  "events_removed_fiducial": 659782,
+  "events_after_fiducial": 2044825,
+  "clusters_after_fiducial": 6838889,
+  "individual_pmain_values_clipped_above_one": 0,
+  "individual_pmain_values_clipped_below_zero": 0,
+  "event_split": "70% train / 15% validation / 15% held-out test; event-level",
+  "held_out_test_used": false
+}
