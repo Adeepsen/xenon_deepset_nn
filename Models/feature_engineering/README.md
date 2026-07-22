@@ -117,3 +117,10 @@ unweighted and test events remain untouched:
 ```bash
 python Models/feature_engineering/deepset_pmain_fraction_enriched_pooling.py --fractional-event-weight 4 --seed 42
 ```
+
+The BCE-with-logits counterpart uses the same project, features, pooling, and
+event sampler so it can be directly compared in W&B:
+
+```bash
+python Models/feature_engineering/deepset_pmain_fraction_enriched_pooling_bce.py --fractional-event-weight 4 --seed 42
+```
