@@ -25,11 +25,22 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-train-clusters", type=int, default=100_000)
     parser.add_argument("--max-points", type=int, default=100_000)
+    parser.add_argument(
+        "--checkpoint", choices=("best_validation", "final_epoch"), default="best_validation",
+        help="Plot the selected best-validation checkpoint or an intentionally overfit final epoch.",
+    )
     args = parser.parse_args()
     output_dir = OUTPUT_ROOT / FEATURE_SET / f"seed_{args.seed}"
-    checkpoint_path = output_dir / "best_validation_bce_model.pt"
+    checkpoint_filename = {
+        "best_validation": "best_validation_bce_model.pt",
+        "final_epoch": "final_epoch_model.pt",
+    }[args.checkpoint]
+    checkpoint_path = output_dir / checkpoint_filename
     if not checkpoint_path.exists():
-        raise FileNotFoundError(f"BCE checkpoint not found: {checkpoint_path}")
+        raise FileNotFoundError(
+            f"BCE checkpoint not found: {checkpoint_path}\n"
+            "Copy it from the GPU server's matching bce_output directory, then rerun this command."
+        )
 
     split_data = split_arrays([FEATURE_SET], args.seed, FEATURE_SET, args.max_train_clusters)
     truth, predictions = {}, {}
@@ -46,11 +57,11 @@ def main() -> None:
         sample = np.random.default_rng(args.seed).choice(
             len(truth[split_name]), size=min(args.max_points, len(truth[split_name])), replace=False
         )
-        label = f"BCE all-event-relative — {split_name}{' event sample' if split_name == 'train' else ''}"
+        label = f"BCE {args.checkpoint.replace('_', ' ')} — {split_name}{' event sample' if split_name == 'train' else ''}"
         metrics[split_name] = plot_panel(ax, truth[split_name], predictions[split_name], label, sample, metric_split=split_name)
-    fig.suptitle("BCE-with-logits selected checkpoint: training vs. validation predictions", y=1.02)
+    fig.suptitle(f"BCE-with-logits {args.checkpoint.replace('_', ' ')}: training vs. validation predictions", y=1.02)
     fig.tight_layout()
-    plot_path = output_dir / f"bce_training_vs_validation_true_vs_predicted_seed{args.seed}.png"
+    plot_path = output_dir / f"bce_{args.checkpoint}_training_vs_validation_true_vs_predicted_seed{args.seed}.png"
     summary_path = plot_path.with_suffix(".json")
     fig.savefig(plot_path, dpi=240, bbox_inches="tight")
     plt.close(fig)
