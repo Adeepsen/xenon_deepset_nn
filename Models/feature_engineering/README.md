@@ -124,3 +124,11 @@ event sampler so it can be directly compared in W&B:
 ```bash
 python Models/feature_engineering/deepset_pmain_fraction_enriched_pooling_bce.py --fractional-event-weight 4 --seed 42
 ```
+
+Gated-attention pooling variants use ordinary full-data MSE training and log
+to the same W&B project as the sum/mean/max pooling ablation:
+
+```bash
+python Models/feature_engineering/deepset_pmain_attention_pooling.py --pooling gated_sum --seed 42
+python Models/feature_engineering/deepset_pmain_attention_pooling.py --pooling sum_mean_max_gated --seed 42
+```
