@@ -18,7 +18,7 @@
   ],
   "seed": 42,
   "best_epoch": 32,
-  "best_val_p_main_bce": 0.20816990499695143,
+  "best_val_p_main_bce": 0.2081672015786171,
   "best_validation_checkpoint": "/home/adeeps/projects/xenon_deepset_nn/Models/feature_engineering/bce_output/all_event_relative/seed_42/best_validation_bce_model.pt",
   "held_out_test_evaluated": false,
   "events_raw": 2704607,
