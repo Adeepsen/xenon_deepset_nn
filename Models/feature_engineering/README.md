@@ -109,3 +109,11 @@ validation events:
 ```bash
 python Models/feature_engineering/deepset_pmain_wide_lowreg.py --seed 42
 ```
+
+The fraction-enriched pooling test keeps plain MSE while sampling complete
+training events that contain fractional targets more frequently. Validation is
+unweighted and test events remain untouched:
+
+```bash
+python Models/feature_engineering/deepset_pmain_fraction_enriched_pooling.py --fractional-event-weight 4 --seed 42
+```
