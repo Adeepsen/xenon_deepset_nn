@@ -1,0 +1,217 @@
+{
+  "status": "validation-only diagnostic; held-out test not evaluated",
+  "model": "extra_trees",
+  "feature_sets": [
+    "baseline",
+    "all_event_relative"
+  ],
+  "tree_overall_metrics": {
+    "baseline": {
+      "target_regime": "all",
+      "n_clusters": 150000,
+      "mse": 0.1877058812942715,
+      "mae": 0.3782382493421904,
+      "r2": 0.23351663966871128
+    },
+    "all_event_relative": {
+      "target_regime": "all",
+      "n_clusters": 150000,
+      "mse": 0.12172952033777897,
+      "mae": 0.255767076874003,
+      "r2": 0.5029263273123437
+    }
+  },
+  "tree_fractional_metrics": {
+    "baseline": {
+      "target_regime": "fractional",
+      "n_clusters": 3917,
+      "mse": 0.15639736534894078,
+      "mae": 0.34610909126711603,
+      "r2": -0.4053022556464816
+    },
+    "all_event_relative": {
+      "target_regime": "fractional",
+      "n_clusters": 3917,
+      "mse": 0.1142283108774272,
+      "mae": 0.27558831759872554,
+      "r2": -0.026393907445852793
+    }
+  },
+  "top_permutation_features": {
+    "all_event_relative": [
+      {
+        "feature": "electron_fraction_of_event_sum",
+        "mse_increase_mean": 0.052673284696146815,
+        "mse_increase_std": 0.0004046431803500417
+      },
+      {
+        "feature": "electron_fraction_of_event_max",
+        "mse_increase_mean": 0.036334558192166855,
+        "mse_increase_std": 0.00022757035043258854
+      },
+      {
+        "feature": "drift_time_minus_event_mean",
+        "mse_increase_mean": 0.03605702240039854,
+        "mse_increase_std": 0.0004988869799536794
+      },
+      {
+        "feature": "drift_time_rank_fraction",
+        "mse_increase_mean": 0.017519037448764815,
+        "mse_increase_std": 0.00017275575131150666
+      },
+      {
+        "feature": "event_log_cluster_count",
+        "mse_increase_mean": 0.0073808795014181664,
+        "mse_increase_std": 0.0001524369136855595
+      },
+      {
+        "feature": "x",
+        "mse_increase_mean": 0.0049864877128817185,
+        "mse_increase_std": 0.00011901079185896607
+      },
+      {
+        "feature": "distance_from_event_centroid",
+        "mse_increase_mean": 0.004738791729960498,
+        "mse_increase_std": 9.394097380783813e-05
+      },
+      {
+        "feature": "electron_rank_fraction",
+        "mse_increase_mean": 0.004316453146066421,
+        "mse_increase_std": 5.2798681787343546e-05
+      },
+      {
+        "feature": "n_electrons_interface",
+        "mse_increase_mean": 0.002812618725929303,
+        "mse_increase_std": 8.574624752761858e-05
+      },
+      {
+        "feature": "y",
+        "mse_increase_mean": 0.0027544784778394393,
+        "mse_increase_std": 0.00011615381856068322
+      }
+    ],
+    "baseline": [
+      {
+        "feature": "n_electrons_interface",
+        "mse_increase_mean": 0.053367174997146785,
+        "mse_increase_std": 0.00042938964405730333
+      },
+      {
+        "feature": "x",
+        "mse_increase_mean": 0.024827367334175576,
+        "mse_increase_std": 0.0004181951406192946
+      },
+      {
+        "feature": "y",
+        "mse_increase_mean": 0.014641638285459163,
+        "mse_increase_std": 0.00019640505401465684
+      },
+      {
+        "feature": "drift_time_mean",
+        "mse_increase_mean": 0.005661804591943631,
+        "mse_increase_std": 0.0001492492684801771
+      },
+      {
+        "feature": "drift_time_spread",
+        "mse_increase_mean": 0.0022030187107438316,
+        "mse_increase_std": 0.00013987150552464291
+      }
+    ]
+  },
+  "conditional_label_variance_overall": [
+    {
+      "feature_set": "baseline",
+      "neighbors": 10,
+      "target_regime": "all",
+      "n_queries": 25000,
+      "mean_neighbor_label_variance": 0.1685085892677307,
+      "median_neighbor_label_variance": 0.20999999344348907,
+      "neighbor_mean_prediction_mse": 0.20525071024894714,
+      "tree_prediction_mse": 0.18806910180730432,
+      "mean_neighbor_distance": 0.15900524168858277,
+      "variance_vs_tree_squared_error_correlation": 0.45480303662771776
+    },
+    {
+      "feature_set": "baseline",
+      "neighbors": 30,
+      "target_regime": "all",
+      "n_queries": 25000,
+      "mean_neighbor_label_variance": 0.18218062818050385,
+      "median_neighbor_label_variance": 0.222222238779068,
+      "neighbor_mean_prediction_mse": 0.19405074417591095,
+      "tree_prediction_mse": 0.18806910180730432,
+      "mean_neighbor_distance": 0.20849563767891813,
+      "variance_vs_tree_squared_error_correlation": 0.5097365305623632
+    },
+    {
+      "feature_set": "baseline",
+      "neighbors": 100,
+      "target_regime": "all",
+      "n_queries": 25000,
+      "mean_neighbor_label_variance": 0.18842564523220062,
+      "median_neighbor_label_variance": 0.2302878201007843,
+      "neighbor_mean_prediction_mse": 0.19003839790821075,
+      "tree_prediction_mse": 0.18806910180730432,
+      "mean_neighbor_distance": 0.28407325809169814,
+      "variance_vs_tree_squared_error_correlation": 0.5217309739741418
+    },
+    {
+      "feature_set": "all_event_relative",
+      "neighbors": 10,
+      "target_regime": "all",
+      "n_queries": 25000,
+      "mean_neighbor_label_variance": 0.12595050036907196,
+      "median_neighbor_label_variance": 0.1599999964237213,
+      "neighbor_mean_prediction_mse": 0.1452966332435608,
+      "tree_prediction_mse": 0.12201475465647894,
+      "mean_neighbor_distance": 0.9145789965743383,
+      "variance_vs_tree_squared_error_correlation": 0.38781348544078753
+    },
+    {
+      "feature_set": "all_event_relative",
+      "neighbors": 30,
+      "target_regime": "all",
+      "n_queries": 25000,
+      "mean_neighbor_label_variance": 0.1382444202899933,
+      "median_neighbor_label_variance": 0.1600000113248825,
+      "neighbor_mean_prediction_mse": 0.13785947859287262,
+      "tree_prediction_mse": 0.12201475465647894,
+      "mean_neighbor_distance": 1.0441056261065271,
+      "variance_vs_tree_squared_error_correlation": 0.42559225056966404
+    },
+    {
+      "feature_set": "all_event_relative",
+      "neighbors": 100,
+      "target_regime": "all",
+      "n_queries": 25000,
+      "mean_neighbor_label_variance": 0.1452515870332718,
+      "median_neighbor_label_variance": 0.1763000190258026,
+      "neighbor_mean_prediction_mse": 0.1373269408941269,
+      "tree_prediction_mse": 0.12201475465647894,
+      "mean_neighbor_distance": 1.218238235070344,
+      "variance_vs_tree_squared_error_correlation": 0.42864928351221954
+    }
+  ],
+  "data_stats": {
+    "seed": 42,
+    "events_raw": 2704607,
+    "clusters_raw": 10259121,
+    "events_removed_fiducial": 659782,
+    "events_after_fiducial": 2044825,
+    "clusters_after_fiducial": 6838889,
+    "individual_pmain_values_clipped_above_one": 0,
+    "individual_pmain_values_clipped_below_zero": 0,
+    "sampled_train_events": 149930,
+    "sampled_train_clusters": 500000,
+    "sampled_validation_events": 44819,
+    "sampled_validation_clusters": 150000,
+    "held_out_test_events_reserved": 306724,
+    "held_out_test_used": false
+  },
+  "interpretation": {
+    "tree_matches_neural_model": "Evidence that the current features, rather than Deep Sets capacity, limit performance.",
+    "tree_beats_neural_model": "Evidence that the neural model or its optimization leaves usable feature signal unextracted.",
+    "large_local_label_variance": "Nearby points in available feature space have differing labels; consistent with missing inputs, stochastic labels, or insufficient local sampling density.",
+    "small_local_label_variance_but_large_model_error": "The current inputs contain locally recoverable signal that the fitted model is not using well."
+  }
+}
