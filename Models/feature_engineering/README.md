@@ -132,3 +132,32 @@ to the same W&B project as the sum/mean/max pooling ablation:
 python Models/feature_engineering/deepset_pmain_attention_pooling.py --pooling gated_sum --seed 42
 python Models/feature_engineering/deepset_pmain_attention_pooling.py --pooling sum_mean_max_gated --seed 42
 ```
+
+## Tree benchmark and conditional label variance
+
+The validation-only tree diagnostic tests whether a non-neural model can
+extract more signal from the same inputs, computes permutation feature
+importance, and measures how much `p_main` varies among nearby training
+clusters in standardized feature space:
+
+```bash
+python analysis/tree_feature_and_label_variance.py
+```
+
+By default it compares the five-feature baseline with `all_event_relative`
+using Extra Trees, samples complete events up to 500,000 training and 150,000
+validation clusters, and uses smaller cluster subsamples for permutation and
+nearest-neighbor calculations. The held-out test events are reserved and never
+evaluated. Results are written to `analysis/tree_diagnostics_output/`.
+
+For a literal random forest or a faster histogram-boosted comparison:
+
+```bash
+python analysis/tree_feature_and_label_variance.py --model random_forest
+python analysis/tree_feature_and_label_variance.py --model hist_gradient_boosting
+```
+
+Add `--wandb` to log summary metrics and upload the generated analysis files to
+the `xenon-pmain-tree-diagnostics` W&B project. Large local-neighbor label
+variance is consistent with missing inputs, stochastic labels, or sparse local
+coverage; it is not by itself a formal proof of irreducible noise.
