@@ -27,7 +27,7 @@ import wandb
 DEFAULT_PROJECT = "senadeep5-clemson-university/xenon-deepset"
 OUTPUT_DIR = Path(__file__).resolve().parent / "wandb_output"
 PRIMARY_CANDIDATES = [
-    "val_event_main_accuracy", "val_accuracy", "validation_accuracy",
+    "val_p_main_mse", "val_event_main_accuracy", "val_accuracy", "validation_accuracy",
     "val_f1", "f1", "val_auc", "val_mean_auc",
 ]
 LOSS_CANDIDATES = ["val_loss", "validation_loss", "val_mse", "loss"]
@@ -82,6 +82,7 @@ def select_primary(runs: pd.DataFrame, histories: dict[str, pd.DataFrame]) -> tu
     columns = set(runs.columns)
     for history in histories.values():
         columns.update(history.columns)
+    columns.update(c.removeprefix("summary.") for c in runs.columns if c.startswith("summary."))
     primary = first_present(columns, PRIMARY_CANDIDATES)
     if primary is None:
         # Prefer a validation metric over a generic metric when source code differs.
@@ -213,9 +214,17 @@ def write_report(project: str, table: pd.DataFrame, primary: str, val_loss: str 
 
 
 def main() -> None:
+    global OUTPUT_DIR
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", default=DEFAULT_PROJECT, help="W&B path: entity/project")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=OUTPUT_DIR,
+        help="Directory for CSV, plots, and Markdown output",
+    )
     args = parser.parse_args()
+    OUTPUT_DIR = args.output_dir.resolve()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     api = wandb.Api(timeout=60)
     runs, histories = collect_runs(api, args.project)
