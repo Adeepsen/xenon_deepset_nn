@@ -1,0 +1,21 @@
+{
+  "feature_set": "all_event_relative",
+  "pooling": "sum_mean_max",
+  "seed": 42,
+  "fractional_event_weight": 4.0,
+  "raw_fractional_event_rate": 0.07750089599036453,
+  "expected_sampled_fractional_event_rate": 0.25152365750355976,
+  "best_epoch": 33,
+  "best_val_p_main_mse": 0.06314381957054138,
+  "best_validation_checkpoint": "/home/adeeps/projects/xenon_deepset_nn/Models/feature_engineering/fraction_enriched_pooling_output/event_weight_4/seed_42/best_validation_model.pt",
+  "held_out_test_evaluated": false,
+  "events_raw": 2704607,
+  "clusters_raw": 10259121,
+  "events_removed_fiducial": 659782,
+  "events_after_fiducial": 2044825,
+  "clusters_after_fiducial": 6838889,
+  "individual_pmain_values_clipped_above_one": 0,
+  "individual_pmain_values_clipped_below_zero": 0,
+  "event_split": "70% train / 15% validation / 15% held-out test; event-level",
+  "held_out_test_used": false
+}
