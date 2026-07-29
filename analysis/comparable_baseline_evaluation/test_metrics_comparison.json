@@ -1,0 +1,46 @@
+{
+  "purpose": "One held-out event split; frozen checkpoints only; no test-driven model selection.",
+  "split": {
+    "events_raw": 2704607,
+    "clusters_raw": 10259121,
+    "events_removed_fiducial": 659782,
+    "events_test": 306724,
+    "clusters_test": 1027230,
+    "seed": 42,
+    "event_split": "70% train / 15% validation / 15% test"
+  },
+  "checkpoints": {
+    "per_cluster_mlp": "/Users/adeepsen/xenon_deepset_nn/Models/checkpoints/best.pt",
+    "gated_sum_deepsets": "/Users/adeepsen/xenon_deepset_nn/Models/feature_engineering/attention_pooling_output/gated_sum/seed_42/best_validation_model.pt"
+  },
+  "metrics": [
+    {
+      "model": "Electron-count argmax",
+      "test_p_main_mse": 0.22927717864513397,
+      "test_p_main_mae": 0.2322438508272171,
+      "test_p_main_r2": 0.06437039375305176,
+      "test_event_main_accuracy_strict": 0.7255773920527901,
+      "test_event_main_accuracy_tie_aware": 0.8842901109792517,
+      "test_event_main_tie_fraction": 0.3565615993531644
+    },
+    {
+      "model": "Per-cluster MLP",
+      "test_p_main_mse": 0.1862269639968872,
+      "test_p_main_mae": 0.3743860423564911,
+      "test_p_main_r2": 0.2400488257408142,
+      "test_event_main_accuracy_strict": 0.7207489469360077,
+      "test_event_main_accuracy_tie_aware": 0.8877818494803146,
+      "test_event_main_tie_fraction": 0.3565615993531644
+    },
+    {
+      "model": "Gated-sum Deep Sets",
+      "test_p_main_mse": 0.06060829758644104,
+      "test_p_main_mae": 0.11927659809589386,
+      "test_p_main_r2": 0.7526708841323853,
+      "test_event_main_accuracy_strict": 0.7399583990819107,
+      "test_event_main_accuracy_tie_aware": 0.9353555639597815,
+      "test_event_main_tie_fraction": 0.3565615993531644
+    }
+  ],
+  "note": "Argmax emits one hard p_main=1 prediction per event; all other clusters receive zero."
+}

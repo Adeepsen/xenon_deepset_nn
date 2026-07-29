@@ -161,3 +161,22 @@ Add `--wandb` to log summary metrics and upload the generated analysis files to
 the `xenon-pmain-tree-diagnostics` W&B project. Large local-neighbor label
 variance is consistent with missing inputs, stochastic labels, or sparse local
 coverage; it is not by itself a formal proof of irreducible noise.
+
+## Neural-checkpoint input importance
+
+Measure how much the selected checkpoint depends on each of the original five
+detector observables:
+
+```bash
+python analysis/neural_checkpoint_permutation_importance.py
+```
+
+For the 14-feature model this performs grouped source permutations. Permuting
+`n_electrons_interface`, for example, also recomputes electron fraction and
+rank before inference; permuting `drift_time_mean` recomputes drift offset and
+rank. This avoids understating importance when the same raw measurement is
+represented by engineered descendants. The diagnostic uses validation events
+only and writes results to `analysis/neural_permutation_output/`.
+
+Use `--direct-columns` only when the desired question is the unique residual
+importance of each raw column while its engineered descendants remain intact.
