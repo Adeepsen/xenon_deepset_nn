@@ -1,0 +1,18 @@
+{
+  "feature_set": "all_event_relative",
+  "pooling": "gated_sum",
+  "seed": 44,
+  "best_epoch": 157,
+  "best_val_p_main_mse": 0.06001216173171997,
+  "best_validation_checkpoint": "/home/adeeps/projects/xenon_deepset_nn/Models/feature_engineering/attention_pooling_output/gated_sum/seed_44/best_validation_model.pt",
+  "held_out_test_evaluated": false,
+  "events_raw": 2704607,
+  "clusters_raw": 10259121,
+  "events_removed_fiducial": 659782,
+  "events_after_fiducial": 2044825,
+  "clusters_after_fiducial": 6838889,
+  "individual_pmain_values_clipped_above_one": 0,
+  "individual_pmain_values_clipped_below_zero": 0,
+  "event_split": "70% train / 15% validation / 15% held-out test; event-level",
+  "held_out_test_used": false
+}
