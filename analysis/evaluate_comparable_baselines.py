@@ -117,6 +117,42 @@ def regression_metrics(target: np.ndarray, prediction: np.ndarray) -> dict[str, 
     }
 
 
+def metrics_by_target_regime(target: np.ndarray, predictions: dict[str, np.ndarray]) -> pd.DataFrame:
+    regimes = {
+        "Endpoint (0 or 1)": (target == 0.0) | (target == 1.0),
+        "Fractional (0 < p_main < 1)": (target > 0.0) & (target < 1.0),
+    }
+    rows = []
+    for regime, mask in regimes.items():
+        for model, prediction in predictions.items():
+            rows.append({
+                "model": model,
+                "target_regime": regime,
+                "clusters": int(mask.sum()),
+                "p_main_mse": float(mean_squared_error(target[mask], prediction[mask])),
+                "p_main_mae": float(mean_absolute_error(target[mask], prediction[mask])),
+            })
+    return pd.DataFrame(rows)
+
+
+def make_regime_plot(metrics: pd.DataFrame) -> None:
+    plotted_models = ("Per-cluster MLP", "Gated-sum Deep Sets")
+    regimes = ("Endpoint (0 or 1)", "Fractional (0 < p_main < 1)")
+    labels = ("Endpoint\n(p_main = 0 or 1)", "Fractional\n(0 < p_main < 1)")
+    x = np.arange(len(regimes))
+    width = 0.36
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4), sharex=True)
+    for axis, metric, title in zip(axes, ("p_main_mse", "p_main_mae"), ("Test MSE", "Test MAE")):
+        for index, model in enumerate(plotted_models):
+            values = [float(metrics.loc[(metrics.model == model) & (metrics.target_regime == regime), metric].iloc[0]) for regime in regimes]
+            axis.bar(x + (index - 0.5) * width, values, width, label=model)
+        axis.set(title=title, xticks=x, xticklabels=labels, ylabel=metric.replace("p_main_", "p_main ").upper())
+    axes[0].legend()
+    fig.tight_layout()
+    fig.savefig(OUTPUT_DIR / "test_metrics_by_target_regime.png", dpi=220)
+    plt.close(fig)
+
+
 def event_metrics(target: np.ndarray, prediction: np.ndarray, groups: list[np.ndarray]) -> dict[str, float]:
     strict_correct = tie_aware_correct = ties = 0
     for rows in groups:
@@ -167,13 +203,19 @@ def predict_deepsets(x: np.ndarray, target: np.ndarray, groups: list[np.ndarray]
 def make_plots(target: np.ndarray, predictions: dict[str, np.ndarray]) -> None:
     rng = np.random.default_rng(SEED)
     sample = rng.choice(len(target), size=min(150_000, len(target)), replace=False)
-    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), sharex=True, sharey=True)
-    for axis, (name, predicted) in zip(axes, predictions.items()):
-        axis.hexbin(target[sample], predicted[sample], gridsize=75, mincnt=1, bins="log", cmap="viridis")
-        axis.plot([0, 1], [0, 1], "w--", linewidth=1)
-        axis.set(title=name, xlabel="True $p_{main}$", xlim=(0, 1), ylim=(0, 1))
+    plotted = (("Per-cluster MLP", predictions["Per-cluster MLP"]), ("Gated-sum Deep Set", predictions["Gated-sum Deep Sets"]))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5), sharex=True, sharey=True)
+    hexbin = None
+    for axis, (title, predicted) in zip(axes, plotted):
+        hexbin = axis.hexbin(target[sample], predicted[sample], gridsize=75, mincnt=1, bins="log", cmap="viridis")
+        axis.plot([0, 1], [0, 1], color="red", linewidth=1.5)
+        axis.set(xlabel="True $p_{main}$", xlim=(0, 1), ylim=(0, 1))
+        if title:
+            axis.set_title(title)
     axes[0].set_ylabel("Predicted $p_{main}$")
-    fig.tight_layout()
+    fig.subplots_adjust(right=0.88, wspace=0.12)
+    colorbar = fig.colorbar(hexbin, cax=fig.add_axes((0.90, 0.16, 0.02, 0.72)))
+    colorbar.set_label("log10(number of clusters)")
     fig.savefig(OUTPUT_DIR / "test_predicted_vs_true_comparison.png", dpi=220)
     plt.close(fig)
 
@@ -195,6 +237,9 @@ def main() -> None:
         results.append({"model": name, **regression_metrics(target, predicted), **event_metrics(target, predicted, groups)})
     table = pd.DataFrame(results)
     table.to_csv(OUTPUT_DIR / "test_metrics_comparison.csv", index=False)
+    regime_table = metrics_by_target_regime(target, predictions)
+    regime_table.to_csv(OUTPUT_DIR / "test_metrics_by_target_regime.csv", index=False)
+    make_regime_plot(regime_table)
     make_plots(target, predictions)
     summary = {
         "purpose": "One held-out event split; frozen checkpoints only; no test-driven model selection.",

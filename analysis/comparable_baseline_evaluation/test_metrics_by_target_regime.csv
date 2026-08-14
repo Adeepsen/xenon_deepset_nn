@@ -1,0 +1,7 @@
+model,target_regime,clusters,p_main_mse,p_main_mae
+Electron-count argmax,Endpoint (0 or 1),1000683,0.2303396761417389,0.2303396761417389
+Per-cluster MLP,Endpoint (0 or 1),1000683,0.1870250105857849,0.3752591013908386
+Gated-sum Deep Sets,Endpoint (0 or 1),1000683,0.059115804731845856,0.11582037806510925
+Electron-count argmax,Fractional (0 < p_main < 1),26547,0.1892271339893341,0.3040214776992798
+Per-cluster MLP,Fractional (0 < p_main < 1),26547,0.15614460408687592,0.3414727747440338
+Gated-sum Deep Sets,Fractional (0 < p_main < 1),26547,0.11686749011278152,0.24955876171588898

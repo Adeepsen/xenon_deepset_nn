@@ -89,10 +89,11 @@ plt.show()
 # Event multiplicity
 
 plt.figure(figsize=(8, 4))
-plt.hist(counts, bins=100)
-plt.title("Clusters per Event")
+plt.hist(counts, bins=np.arange(0.5, counts.max() + 1.5, 1))
+plt.yscale("log")
+plt.title("Clusters per Event (log event count)")
 plt.xlabel("Number of Clusters")
-plt.ylabel("Number of Events")
+plt.ylabel("Number of Events (log scale)")
 plt.tight_layout()
 plt.show()
 
